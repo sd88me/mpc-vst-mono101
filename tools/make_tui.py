@@ -4,13 +4,13 @@
 Layout: three tabs under a header (MONO-101, PRESET SAVE / DELETE: SAVE shows the drawn naming keyboard over the tab).
     VCO      CONTROLLER (VOLUME, TUNE, PORTAMENTO knobs stacked, the portamento switch), BENDER (VCO / VCF / LFO MOD
              sliders, TRANSPOSE), MODULATOR (RATE, WAVE under it), VCO (MOD with RANGE under it, PW with PWM).
-    VCF      SOURCE MIXER (+ SUB OSC), VCF (+ QUALITY), VCA (MODE), ENV (+ TRIGGER).
-    BENT     CIRCUIT BENT: CIRCUIT (PURE / BENT), OVERDRIVE, PWM SOURCE, VCF FM (the circuitbenders mods), TRI VCO and LFO
-             (RANGE, KEY TRIG, SYNC + DIV), each with its ON / OFF switch.
+    VCF      SOURCE MIXER, VCF, VCA, ENV; along the bottom SUB OSC, QUALITY, MODE, TRIGGER (horizontal switches).
+    BENT     CIRCUIT BENT: CIRCUIT (PURE / BENT), PWM SOURCE, TRI VCO, OVERDRIVE, VCF FM, LFO (RANGE, DIV; KEY TRIG, SYNC):
+             the controls on top, every ON / OFF switch in a row along the bottom.
 Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions with
 transparent radio buttons over them (tap a position or its legend; a rotary's knob also drags).
 Q-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; BENT circuit+overdrive /
-PWM source / VCF FM / TRI level + LFO.
+PWM + TRI / OVERDRIVE + VCF FM / LFO.
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
@@ -871,8 +871,9 @@ HEADER = 58                  # the top strip: the wordmark, the preset buttons
 Y0, Y1 = HEADER + 4, H - 8   # the section boxes
 HEAD = 34                    # a section's title strip
 TOP = Y0 + HEAD + 38         # faders' top (their names 20 above)
-FH = 212                     # their travel picture here
-SY = TOP + FH + 60           # the row under the faders: switches, rotaries (their names on it)
+FH = 284                     # their travel picture here
+SY = TOP + FH + 52           # the row under the faders: its names; the switches' levers at SY + 60, rotaries at SY + 84
+SW_Y, ROT_Y = SY + 60, SY + 84
 
 
 def header(p):
@@ -895,41 +896,42 @@ def finish(p):
 
 
 def page_one():
-    """CONTROLLER (stacked), BENDER, MODULATOR and VCO: the panel's left side, each switch under its section's faders."""
+    """CONTROLLER (stacked), BENDER, MODULATOR and VCO: the panel's left side; the switches and rotaries in a row along the
+    bottom, under their sections' faders."""
     p = Page("VCO", 0)
     header(p)
     kstrip = knob_strip("knob.png")
     sections(p.p, [("CONTROLLER", 16, 330), ("BENDER", 330, 620), ("MODULATOR", 620, 800), ("VCO", 800, 1264)], Y0, Y1, head=HEAD)
     # CONTROLLER: the knobs one above the other, each with its name and value to the right; the portamento switch below
-    for key, cap, cy, lo, hi in [("volume", "VOLUME", 160, "0", "10"), ("tune", "TUNE", 298, "-5", "+5"),
-                                 ("portamento", "PORTAMENTO", 436, "0", "10")]:
+    for key, cap, cy, lo, hi in [("volume", "VOLUME", 154, "0", "10"), ("tune", "TUNE", 274, "-5", "+5"),
+                                 ("portamento", "PORTAMENTO", 394, "0", "10")]:
         cx = 92
         p.knob(key, cx, cy, kstrip, side=True)
         legend(p.p, cap, cx + 130, cy - 24, 11 if len(cap) > 6 else 12, fit=110)
-        legend(p.p, lo, cx - 50, cy + 60, 9)
-        legend(p.p, hi, cx + 50, cy + 60, 9)
-    p.caption(173, 524, "PORTAMENTO", 10)
-    p.hswitch("porta_mode", 173, 584, order=[1, 2, 0], pitch=62)   # the panel's AUTO / OFF / ON
+        legend(p.p, lo, cx - 50, cy + 58, 9)
+        legend(p.p, hi, cx + 50, cy + 58, 9)
+    p.caption(173, SY, "PORTAMENTO", 10)
+    p.hswitch("porta_mode", 173, SW_Y, order=[1, 2, 0], pitch=62)   # the panel's AUTO / OFF / ON
     # BENDER: its three sliders, TRANSPOSE under them
     for key, cap, cx in [("bend_vco", "VCO", 385), ("bend_vcf", "VCF", 475), ("bend_lfo", "LFO MOD", 565)]:
         p.caption(cx, TOP - 20, cap)
         p.fader(key, cx, TOP, "orange", h=FH, numbers=(key == "bend_vco", key == "bend_lfo"))
     p.caption(475, SY, "TRANSPOSE", 10)
-    p.hswitch("transpose", 475, SY + 92, pitch=56)
+    p.hswitch("transpose", 475, SW_Y, pitch=56)
     # MODULATOR: RATE, the wave switch under it
     p.caption(710, TOP - 20, "RATE")
     p.fader("lfo_rate", 710, TOP, "green", h=FH, numbers=(True, True))
     p.caption(710, SY, "WAVE", 10)
-    p.rotary("lfo_wave", 710, SY + 104, glyphs=True)
+    p.rotary("lfo_wave", 710, ROT_Y, glyphs=True)
     # VCO: MOD with RANGE under it, PW with PWM under it
     p.caption(920, TOP - 20, "MOD")
     p.fader("vco_mod", 920, TOP, "orange", h=FH, numbers=(True, True))
     p.caption(920, SY, "RANGE", 10)
-    p.rotary("range", 920, SY + 104)
+    p.rotary("range", 920, ROT_Y)
     p.caption(1144, TOP - 20, "PW")
     p.fader("pulse_width", 1144, TOP, "orange", h=FH, numbers=(True, True))
     p.caption(1144, SY, "PWM", 10)
-    p.vswitch("pwm_source", 1120, SY + 24, cap=11)
+    p.hswitch("pwm_source", 1144, SW_Y, pitch=62)
     p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"],
                ["lfo_rate", "lfo_wave"], ["vco_mod", "range", "pulse_width", "pwm_source"]]
     return finish(p)
@@ -950,7 +952,7 @@ def x2(i):
 
 
 def page_two():
-    """SOURCE MIXER, VCF, VCA, ENV: the faders with the switches under them; QUALITY under the VCF's."""
+    """SOURCE MIXER, VCF, VCA, ENV: the faders, and a row of switches along the bottom (SUB OSC, QUALITY, MODE, TRIGGER)."""
     p = Page("VCF", 1)
     header(p)
     vca0, env1 = x2(9) - VCA_W, x2(13)
@@ -963,61 +965,62 @@ def page_two():
         p.fader(key, cx, TOP, "green" if i < 4 else "orange", h=FH, numbers=(i == sec, i == last))
     mx = (x2(0) + x2(4)) // 2
     p.caption(mx, SY, "SUB OSC", 10)
-    p.vswitch("sub_mode", mx - 46, SY + 24, cap=11)
+    p.hswitch("sub_mode", mx, SW_Y, pitch=92)
     vx = (x2(4) + vca0) // 2
     p.caption(vx, SY, "QUALITY", 10)
-    p.vswitch("quality", vx - 30, SY + 24, cap=11)
+    p.hswitch("quality", vx, SW_Y, pitch=70)
+    p.caption(vca0 + VCA_W // 2, SY, "MODE", 10)
+    p.hswitch("vca_mode", vca0 + VCA_W // 2, SW_Y, pitch=52, cap=9.5)
     ex = (x2(9) + env1) // 2
     p.caption(ex, SY, "TRIGGER", 10)
-    p.vswitch("env_trigger", ex - 56, SY + 24, cap=11)
-    p.caption(vca0 + VCA_W // 2, TOP - 20, "MODE")
-    p.vswitch("vca_mode", vca0 + 24, TOP + 10, cap=9.5, limit=x2(9) + 2)
+    p.hswitch("env_trigger", ex, SW_Y, pitch=96)
     p.qrows = [COLS2[0:4], COLS2[4:8], ["vcf_kybd", "vca_mode"], COLS2[9:13]]
     return finish(p)
 
 
-BENT = [("CIRCUIT", 16, 122), ("OVERDRIVE", 122, 296), ("PWM SOURCE", 296, 546), ("VCF FM", 546, 846), ("TRI VCO", 846, 1016),
-        ("LFO", 1016, 1264)]
+BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 496), ("OVERDRIVE", 496, 616), ("VCF FM", 616, 936),
+        ("LFO", 936, 1264)]
 
 
 def page_three():
-    """CIRCUIT BENT: the circuitbenders mods and two of ours (TRI VCO, LFO SYNC), each with its ON / OFF switch, laid out as
-    the other tabs; CIRCUIT first: PURE is the stock board whatever the others say."""
+    """CIRCUIT BENT: the circuitbenders mods and two of ours (TRI VCO, LFO SYNC). Each section's controls on top, its ON / OFF
+    switch in a row along the bottom; CIRCUIT first: PURE is the stock board whatever the others say."""
     p = Page("BENT", 2)
     header(p)
     kstrip = knob_strip("knob.png")
     sections(p.p, BENT, Y0, Y1, head=HEAD, cap=15)
-    on = [1, 0]                              # ON at the top, as a toggle
-    p.vswitch("mods", 40, TOP + 10, cap=10, order=on)
-    # OVERDRIVE: ON / OFF, DRIVE
-    p.vswitch("drive_on", 150, TOP + 10, cap=11, order=on)
-    p.caption(260, TOP - 20, "DRIVE")
-    p.fader("drive", 260, TOP, "orange", h=FH, numbers=(True, True))
-    # PWM SOURCE: ON / OFF, the source under it
-    p.vswitch("pwm_mod_on", 324, TOP + 10, cap=11, order=on)
-    p.caption(416, SY, "SOURCE", 10)
-    p.rotary("pwm_mod_source", 416, SY + 104)
-    # VCF FM: ON / OFF, AMOUNT; the source under them
-    p.vswitch("fm_on", 574, TOP + 10, cap=11, order=on)
-    p.caption(780, TOP - 20, "AMOUNT")
-    p.fader("fm_amount", 780, TOP, "orange", h=FH, numbers=(True, True))
-    p.caption(696, SY, "SOURCE", 10)
-    p.rotary("fm_source", 696, SY + 104)
-    # TRI VCO: ON / OFF, LEVEL (the VCO's triangle into the mixer)
-    p.vswitch("tri_on", 866, TOP + 10, cap=11, order=on)
-    p.caption(980, TOP - 20, "LEVEL")
-    p.fader("tri_level", 980, TOP, "green", h=FH, numbers=(True, True))
-    # LFO: RANGE, KEY TRIG; SYNC and its DIVISION under them
-    p.caption(1062, TOP - 20, "RANGE", 10)
-    p.vswitch("lfo_range", 1044, TOP + 10, cap=11, order=[2, 1, 0])
-    p.caption(1190, TOP - 20, "KEY TRIG", 10)
-    p.vswitch("lfo_trig", 1170, TOP + 10, cap=11, order=on)
-    p.caption(1062, SY, "SYNC", 10)
-    p.vswitch("lfo_sync", 1044, SY + 24, cap=11, order=on)
-    p.caption(1186, SY, "DIV", 10)
-    p.knob("lfo_div", 1186, SY + 80, kstrip, ticks=9)
-    p.qrows = [["mods", "drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_amount", "fm_source"],
-               ["tri_level", "lfo_div", "lfo_range", "lfo_sync"]]
+    mid = lambda name: [(a + b) / 2 for t, a, b in BENT if t == name][0]
+    # the row along the bottom: CIRCUIT and each mod's ON / OFF
+    p.hswitch("mods", mid("CIRCUIT"), SW_Y, pitch=58, cap=9.5)
+    p.hswitch("pwm_mod_on", mid("PWM SOURCE"), SW_Y, pitch=46)
+    p.hswitch("tri_on", mid("TRI VCO"), SW_Y, pitch=46)
+    p.hswitch("drive_on", mid("OVERDRIVE"), SW_Y, pitch=46)
+    p.hswitch("fm_on", mid("VCF FM"), SW_Y, pitch=46)
+    p.caption(1018, SY, "KEY TRIG", 10)
+    p.hswitch("lfo_trig", 1018, SW_Y, pitch=46)
+    p.caption(1182, SY, "SYNC", 10)
+    p.hswitch("lfo_sync", 1182, SW_Y, pitch=46)
+    # the controls above
+    c = mid("PWM SOURCE")
+    p.caption(c, TOP - 20, "SOURCE")
+    p.rotary("pwm_mod_source", c, TOP + 120)
+    c = mid("TRI VCO")
+    p.caption(c, TOP - 20, "LEVEL")
+    p.fader("tri_level", c, TOP, "green", h=FH, numbers=(True, True))
+    c = mid("OVERDRIVE")
+    p.caption(c, TOP - 20, "DRIVE")
+    p.fader("drive", c, TOP, "orange", h=FH, numbers=(True, True))
+    p.caption(712, TOP - 20, "SOURCE")
+    p.rotary("fm_source", 712, TOP + 120)
+    p.caption(898, TOP - 20, "AMOUNT")
+    p.fader("fm_amount", 898, TOP, "orange", h=FH, numbers=(True, True))
+    c = mid("LFO")
+    p.caption(c, TOP - 20, "RANGE", 10)
+    p.hswitch("lfo_range", c, TOP + 44, pitch=66)
+    p.caption(c, TOP + 112, "DIV", 10)
+    p.knob("lfo_div", c, TOP + 188, kstrip, ticks=9)
+    p.qrows = [["mods", "pwm_mod_source", "pwm_mod_on", "tri_level"], ["drive", "drive_on", "fm_amount", "fm_source"],
+               ["lfo_div", "lfo_range", "lfo_sync", "lfo_trig"]]
     return finish(p)
 
 
