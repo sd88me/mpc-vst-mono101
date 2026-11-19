@@ -54,11 +54,14 @@ Findings:
 
 ## Plugin (2026-11-19)
 `src/OneX1Plugin.cpp` (SDK `mpc::Plugin`), 31 parameters frozen in `params.lock` (the panel's 30 + QUALITY), plugin.json
-uid `S1x1`, beta `1x1 Beta` / `S1xB` (`./build-sdk.sh beta`). `./build-sdk.sh test`: host_sim 19 passed. Skin: the SDK's
-generated default for now. Beta copied to the Live III's /nvme/VST2 Plugins (acvs not restarted yet).
+uid `S1x1`, beta `1x1 Beta` / `S1xB` (`./build-sdk.sh beta`). `./build-sdk.sh test`: host_sim 19 passed. Skin
+(`tools/make_tui.py`): Lemus's own panel (`tools/panel/panel.json`, drawn as Lemus's HardwareView draws it), three tabs
+that each show a slice at true proportions (MOD/VCO, MIX/VCF, VCA/ENV with the lower left panel); sliders at 51 frames
+(0.2 steps), switches as N-frame strips plus tap-the-legend radio zones, QUALITY in the bender lever's place. Beta
+staged on the Live III's /nvme/VST2 Plugins (acvs not restarted yet).
 Extras over Lemus's voice mode: RANDOM steps on each MODULATOR clock (the firmware's job), QUALITY.
 
-Plugin next: device check of the skin (fader film strips at 61 frames), +FAV favourites with the naming
+Plugin next: device check of the skin (drag feel, legend tap zones, Q-Link blocks; VCA/ENV's two left blocks overlap), +FAV favourites with the naming
 keyboard, Lemus's SH-01A MIDI CC map, Live III fast-core pinning, CPU check inside MPC.
 
 ## Next

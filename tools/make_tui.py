@@ -1,50 +1,404 @@
 #!/usr/bin/env python3
-"""Mono-101's native MPC skin: skins/TUI.json + skins/Q-Links.json + the PNGs they use, all art drawn here (Pillow,
-Titillium Web OFL). After OTT's / Acid's make_tui.
+"""Mono-101's native MPC skin: skins/TUI.json + skins/Q-Links.json + the PNGs they use.
 
-Two tabs:
-    PANEL    the synth board's sections as on the instrument: MODULATOR, VCO, SOURCE MIXER, VCF, VCA, ENV. Sixteen faders
-             (Knob film strips dragged vertically), the switches as lit radio groups.
-    CONTROL  VOLUME, TUNE, PORTAMENTO (+ mode), the bender's VCO / VCF / LFO MOD sliders, TRANSPOSE, QUALITY.
-Q-Links: PANEL four blocks of four faders, left to right; CONTROL two blocks.
+The art is Lemus's own panel: tools/panel/panel.json (Lemus machines/sh101/docs/panel.json, the SH-101's top panel measured
+in mm, AGPL-3.0 like the rest of the port) drawn the way Lemus's HardwareView draws it (plugin/HardwareView.cpp: the case,
+grooves, slider channels, scales, legends, caps, knobs and switches), ported to Pillow. Helvetica Bold becomes Liberation
+Sans Bold (OFL, same metrics). The brand marks are left out, as Lemus leaves them out.
+
+The panel is 6:1, too long for the screen at a size a finger can use, so each tab shows one slice of it at true proportions:
+    MOD/VCO   TUNE, MODULATOR, VCO
+    MIX/VCF   SOURCE MIXER, VCF
+    VCA/ENV   the lower left panel (VOLUME, PORTAMENTO, the switches, the bender's sliders; QUALITY where the bender lever is)
+              and VCA, ENV
+Sliders and knobs are Knob film strips (sliders dragged vertically); the slide and rotary switches are film strips too
+(Model-72's way), and their printed position legends are tap targets that pick that position.
+Q-Links: blocks of up to four controls left to right per tab.
     python3 tools/make_tui.py [--preview]     # -> skins/ (build-sdk.sh runs it); --preview also writes build/skin-preview/*.png
 """
-import json, os, shutil, sys
+import colorsys, json, math, os, shutil, sys
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "skins")
-FONTS = os.path.join(ROOT, "tools", "fonts")
 PREVIEW = os.path.join(ROOT, "build", "skin-preview")
 LOCK = [l.strip() for l in open(os.path.join(ROOT, "params.lock")) if l.strip() and not l.startswith("#")]
-FONT = "Titillium Web"
+PANEL = json.load(open(os.path.join(ROOT, "tools", "panel", "panel.json")))
+FONT_FILE = os.path.join(ROOT, "tools", "fonts", "LiberationSans-Bold.ttf")
+CAP_RATIO = 0.688           # Liberation Sans: cap height / em
 GESTURE = "Instant"
-DEVICE_TEXT = 0.64          # the MPC draws a Label's font at about this fraction of its height
 W, H = 1280, 628            # content area
-
-# colours: a dark grey case, lighter section boxes, white legends, one blue accent (the section rules)
-CASE, CASE2 = (40, 42, 46), (30, 32, 35)
-BOX, BOX_EDGE = (54, 57, 62), (78, 82, 88)
-INK, INK_DIM = (236, 238, 240), (150, 156, 164)
-ACCENT_RGB = (86, 156, 214)
-ACCENT = "ff569cd6"
-WELL = (22, 23, 25)
-CHOICES = {
-    "lfo_wave": ["TRI", "SQR", "RND", "NOISE"], "range": ["16'", "8'", "4'", "2'"], "pwm_source": ["LFO", "MAN", "ENV"],
-    "sub_mode": ["1 OCT", "2 OCT", "2 OCT PW"], "vca_mode": ["ENV", "GATE"], "env_trigger": ["GATE+TRIG", "GATE", "LFO"],
-    "porta_mode": ["ON", "AUTO", "OFF"], "transpose": ["L", "M", "H"], "quality": ["HQ", "AUTO", "ECO"],
-}
+SS = 3                      # supersampling
+MIN_ZONE = 40               # px, a tap target
 
 
 def P(key):
     return "Parameter %d" % LOCK.index(key)
 
 
-def ttf(px, weight="SemiBold"):
-    return ImageFont.truetype(os.path.join(FONTS, "TitilliumWeb-%s.ttf" % weight), int(round(px)))
+# ---- the panel data ------------------------------------------------------------------------------------------------------
+def hexrgb(h):
+    h = h.lstrip("#")
+    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-# ---- JSON (keeps key order; the overlay widget has a duplicate "version" key) --------------------------------------------
+C = {k: hexrgb(v["hex"]) for k, v in PANEL["colours"].items()}
+EL = {e["id"]: e for e in PANEL["elements"]}
+ELEMENTS = PANEL["elements"]
+
+# Lemus's parameter ids -> ours (params.lock)
+PARAM = {"lfoRate": "lfo_rate", "lfoWave": "lfo_wave", "vcoMod": "vco_mod", "range": "range", "pulseWidth": "pulse_width",
+         "pwmSource": "pwm_source", "pulseLevel": "pulse_level", "sawLevel": "saw_level", "subLevel": "sub_level",
+         "noiseLevel": "noise_level", "subMode": "sub_mode", "vcfFreq": "vcf_freq", "vcfRes": "vcf_res", "vcfEnv": "vcf_env",
+         "vcfMod": "vcf_mod", "vcfKybd": "vcf_kybd", "vcaMode": "vca_mode", "attack": "attack", "decay": "decay",
+         "sustain": "sustain", "release": "release", "trigger": "env_trigger", "volume": "volume", "tune": "tune",
+         "portamento": "portamento", "portaMode": "porta_mode", "bendVco": "bend_vco", "bendVcf": "bend_vcf",
+         "lfoModDepth": "bend_lfo", "transpose": "transpose", "quality": "quality"}
+
+# QUALITY (ours): a third slide switch in the bender lever's place, drawn like PORTAMENTO's.
+QUALITY = {"id": "hs_quality", "type": "hswitch", "param": "quality", "bbox": [30.4, 288.0, 57.6, 295.2],
+           "positions": [34.0, 44.0, 54.0], "order": [0, 1, 2], "lever_d": 4.2, "colour": "slot_black"}
+QUALITY_PRINT = [
+    {"id": "t_q_hq", "type": "text", "label": "HQ", "bbox": [32.1, 282.9, 35.9, 285.7], "cap_h": 2.76},
+    {"id": "t_q_auto", "type": "text", "label": "AUTO", "bbox": [39.8, 282.9, 48.2, 285.7], "cap_h": 2.76},
+    {"id": "t_q_eco", "type": "text", "label": "ECO", "bbox": [50.8, 282.9, 57.2, 285.7], "cap_h": 2.76},
+    {"id": "t_quality", "type": "text", "label": "QUALITY", "bbox": [34.5, 298.4, 53.5, 301.8], "cap_h": 3.4},
+]
+for e in QUALITY_PRINT + [QUALITY]:
+    EL[e["id"]] = e
+# the bender lever and its arrows (pitch bend and CC1 come in over MIDI)
+DROP = {"bender", "a_bend", "ah_bend_l", "ah_bend_r", "t_bender_lever", "a_push", "ah_push"}
+
+# the printed legends of each switch position (tap targets), in choice order
+LEGENDS = {
+    "lfo_wave": [["g_tri"], ["g_sqr"], ["t_wave_random"], ["t_wave_noise"]],
+    "range": [["t_range_16"], ["t_range_8"], ["t_range_4"], ["t_range_2"]],
+    "pwm_source": [["t_pwm_lfo", "g_pwm_lfo"], ["t_pwm_man"], ["t_pwm_env", "g_pwm_env"]],
+    "sub_mode": [["t_sub1_oct", "t_sub1_down", "g_sub1"], ["t_sub2_oct", "t_sub2_down", "g_sub2"], ["t_sub3_oct", "t_sub3_down", "g_sub3"]],
+    "vca_mode": [["t_vca_env", "g_vca_env"], ["t_vca_gate", "g_vca_gate"]],
+    "env_trigger": [["t_trig_gate", "t_trig_plus", "t_trig_trig"], ["t_trig_gate2"], ["t_trig_lfo"]],
+    "porta_mode": [["t_on"], ["t_auto"], ["t_off"]],
+    "transpose": [["t_l"], ["t_m"], ["t_h"]],
+    "quality": [["t_q_hq"], ["t_q_auto"], ["t_q_eco"]],
+}
+UNPRINTED = ("region", "groove", "case", "key", "led", "button", "power", "jack", "logo")
+
+
+def bbox_of(e):
+    if "bbox" in e:
+        return e["bbox"]
+    if "points" in e:
+        xs, ys = [p[0] for p in e["points"]], [p[1] for p in e["points"]]
+        return [min(xs), min(ys), max(xs), max(ys)]
+    if "r" in e:
+        return [e["x"] - e["r"], e["y"] - e["r"], e["x"] + e["r"], e["y"] + e["r"]]
+    if e["type"] == "arrowhead":
+        return [e["x"] - e["size"], e["y"] - e["size"], e["x"] + e["size"], e["y"] + e["size"]]
+    return None
+
+
+def centre(e):
+    b = bbox_of(e)
+    return ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2)
+
+
+# ---- colour (JUCE's brighter / darker) -----------------------------------------------------------------------------------
+def darker(c, a):
+    h, s, v = colorsys.rgb_to_hsv(*[x / 255 for x in c[:3]])
+    return tuple(int(round(x * 255)) for x in colorsys.hsv_to_rgb(h, s, v / (1 + a)))
+
+
+def brighter(c, a):
+    h, s, v = colorsys.rgb_to_hsv(*[x / 255 for x in c[:3]])
+    return tuple(int(round(x * 255)) for x in colorsys.hsv_to_rgb(h, s, 1 - (1 - v) / (1 + a)))
+
+
+def rgba(c, alpha=1.0):
+    return tuple(c[:3]) + (int(round(255 * alpha)),)
+
+
+BLACK, WHITE = (0, 0, 0), (255, 255, 255)
+
+
+# ---- a painter in panel mm -----------------------------------------------------------------------------------------------
+class Painter:
+    """An RGBA picture w x h px showing the panel from mm (ox, oy) at `scale` px/mm, drawn SS times larger."""
+
+    def __init__(self, w, h, ox, oy, scale):
+        self.w, self.h, self.ox, self.oy, self.k = w, h, ox, oy, scale * SS
+        self.im = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+
+    def copy(self):
+        p = Painter.__new__(Painter)
+        p.__dict__.update(self.__dict__)
+        p.im = self.im.copy()
+        return p
+
+    def pt(self, x, y):
+        return ((x - self.ox) * self.k, (y - self.oy) * self.k)
+
+    def rect(self, b):
+        x0, y0 = self.pt(b[0], b[1])
+        x1, y1 = self.pt(b[2], b[3])
+        return [x0, y0, x1, y1]
+
+    def fill(self, shape, colour, alpha=1.0, grad=None):
+        """shape(draw) draws the shape in 255 on a mask; fills it with colour, or grad = (c0, p0, c1, p1[, radial]) in mm."""
+        m = Image.new("L", self.im.size, 0)
+        shape(ImageDraw.Draw(m))
+        bb = m.getbbox()
+        if not bb:
+            return
+        m = m.crop(bb)
+        if alpha < 1:
+            m = m.point(lambda v: int(v * alpha))
+        layer = Image.new("RGBA", m.size, rgba(colour, 0)) if grad is None else self._gradient(bb, *grad)
+        layer.putalpha(m)
+        self.im.alpha_composite(layer, dest=bb[:2])
+
+    def _gradient(self, bb, c0, p0, c1, p1, radial=False):
+        w, h = bb[2] - bb[0], bb[3] - bb[1]
+        (ax, ay), (bx, by) = self.pt(*p0), self.pt(*p1)
+        ax, ay, bx, by = ax - bb[0], ay - bb[1], bx - bb[0], by - bb[1]
+        dx, dy = bx - ax, by - ay
+        if radial:
+            r = math.hypot(dx, dy) or 1
+            t = Image.new("L", (w, h))
+            t.putdata([int(255 * min(1.0, math.hypot(x - ax, y - ay) / r)) for y in range(h) for x in range(w)])
+        elif abs(dx) < 1e-9:
+            col = Image.new("L", (1, h))
+            col.putdata([int(255 * min(1.0, max(0.0, (y - ay) / dy))) for y in range(h)])
+            t = col.resize((w, h))
+        else:
+            n2 = dx * dx + dy * dy
+            t = Image.new("L", (w, h))
+            t.putdata([int(255 * min(1.0, max(0.0, ((x - ax) * dx + (y - ay) * dy) / n2))) for y in range(h) for x in range(w)])
+        return Image.composite(Image.new("RGBA", (w, h), rgba(c1)), Image.new("RGBA", (w, h), rgba(c0)), t)
+
+    # shapes in mm
+    def box(self, b, colour, alpha=1.0, r=0.0, grad=None):
+        rr = self.rect(b)
+        if r > 0:
+            self.fill(lambda d: d.rounded_rectangle(rr, r * self.k, fill=255), colour, alpha, grad)
+        else:
+            self.fill(lambda d: d.rectangle(rr, fill=255), colour, alpha, grad)
+
+    def outline(self, b, colour, alpha, width, r=0.0):
+        rr = self.rect(b)
+        wpx = max(1, int(round(width * self.k)))
+        self.fill(lambda d: d.rounded_rectangle(rr, r * self.k, outline=255, width=wpx), colour, alpha)
+
+    def ellipse(self, b, colour, alpha=1.0, grad=None, width=0.0):
+        rr = self.rect(b)
+        if width:
+            wpx = max(1, int(round(width * self.k)))
+            self.fill(lambda d: d.ellipse(rr, outline=255, width=wpx), colour, alpha)
+        else:
+            self.fill(lambda d: d.ellipse(rr, fill=255), colour, alpha, grad)
+
+    def line(self, pts, width, colour, alpha=1.0):
+        pp = [self.pt(*p) for p in pts]
+        wpx = max(1, int(round(width * self.k)))
+        self.fill(lambda d: d.line(pp, fill=255, width=wpx, joint="curve"), colour, alpha)
+
+    def poly(self, pts, colour, alpha=1.0):
+        pp = [self.pt(*p) for p in pts]
+        self.fill(lambda d: d.polygon(pp, fill=255), colour, alpha)
+
+    def arc(self, cx, cy, r, a0, a1, width, colour):
+        rr = self.rect([cx - r, cy - r, cx + r, cy + r])
+        wpx = max(1, int(round(width * self.k)))
+        self.fill(lambda d: d.arc(rr, a0 - 90, a1 - 90, fill=255, width=wpx), colour)   # Pillow's 0 is 3 o'clock
+
+    def text(self, label, b, cap_h, colour):
+        """Lemus's drawLegend: cap height centred in the box, scaled across to the box's width (0.75-1.3), digits not."""
+        px = cap_h * self.k / CAP_RATIO
+        font = ImageFont.truetype(FONT_FILE, max(4, int(round(px))))
+        x0, y0, x1, y1 = font.getbbox(label, anchor="ls")
+        if x1 <= x0:
+            return
+        pad = int(px * 0.3) + 2
+        tw = x1 - x0
+        m = Image.new("L", (tw + 2 * pad, y1 - y0 + 2 * pad), 0)
+        ImageDraw.Draw(m).text((pad - x0, pad - y0), label, font=font, fill=255, anchor="ls")
+        bw = (b[2] - b[0]) * self.k
+        sx = 1.0 if label.isdigit() else min(1.3, max(0.75, bw / tw))
+        m = m.resize((max(1, int(round(m.width * sx))), m.height), Image.LANCZOS)
+        bx0, by0, bx1, by1 = self.rect(b)
+        caps = any(ch.isupper() or ch.isdigit() for ch in label)
+        baseline = (by0 + by1) / 2 + cap_h * self.k / 2 if caps else by1 - max(0, y1)
+        dx = int(round((bx0 + bx1) / 2 - m.width / 2))
+        dy = int(round(baseline - (pad - y0)))
+        layer = Image.new("RGBA", m.size, rgba(colour, 0))
+        layer.putalpha(m)
+        cx, cy = max(0, -dx), max(0, -dy)
+        if cx < layer.width and cy < layer.height:
+            self.im.alpha_composite(layer.crop((cx, cy, layer.width, layer.height)), dest=(dx + cx, dy + cy))
+
+    def result(self):
+        return self.im.resize((self.w, self.h), Image.LANCZOS)
+
+
+def polar(cx, cy, r, deg):
+    a = math.radians(deg)
+    return (cx + r * math.sin(a), cy - r * math.cos(a))
+
+
+def arrowhead(p, tip, deg, size, colour):
+    a = math.radians(deg)
+    pts = [(0, 0), (-size * 0.5, size), (size * 0.5, size)]
+    p.poly([(tip[0] + x * math.cos(a) - y * math.sin(a), tip[1] + x * math.sin(a) + y * math.cos(a)) for x, y in pts], colour)
+
+
+# ---- the static panel (HardwareView::renderStatic) -----------------------------------------------------------------------
+def groove(p, a, b, w):
+    horizontal = abs(b[1] - a[1]) < abs(b[0] - a[0])
+    off = (0, w * 0.85) if horizontal else (w * 0.85, 0)
+    p.line([(a[0] + off[0], a[1] + off[1]), (b[0] + off[0], b[1] + off[1])], w * 0.55, C["groove_light"], 0.75)
+    p.line([a, b], w, C["groove_dark"])
+
+
+def knob_body(p, cx, cy, r):
+    p.ellipse([cx - r - 0.4, cy - r + 0.6, cx + r + 1.8, cy + r + 3.0], BLACK, 0.28)
+    p.ellipse([cx - r + 0.2, cy - r + 0.7, cx + r + 0.8, cy + r + 1.5], BLACK, 0.35)
+    p.ellipse([cx - r, cy - r, cx + r, cy + r], None, grad=((0x4a, 0x47, 0x4b), (cx - r, cy - r), (0x0e, 0x0d, 0x0f), (cx + r * 0.6, cy + r)))
+    t = r * 0.86
+    p.ellipse([cx - t, cy - t + 0.15, cx + t, cy + t + 0.15], None,
+              grad=((0x39, 0x36, 0x3a), (cx - t * 0.6, cy - t * 0.7), (0x17, 0x16, 0x18), (cx + t * 0.5, cy + t * 0.8), True))
+    p.ellipse([cx - t, cy - t + 0.15, cx + t, cy + t + 0.15], WHITE, 0.10, width=0.25)
+
+
+def channel(p, e):
+    b = e["bbox"]
+    p.box(b, darker(C["panel"], 0.06))
+    p.box([b[0], b[1], b[0] + 0.6, b[3]], BLACK, 0.55)
+    p.box([b[0], b[3] - 0.7, b[2], b[3]], BLACK, 0.55)
+    p.box([b[0], b[1], b[2], b[1] + 0.35], BLACK, 0.55)
+    p.box([b[2] - 0.35, b[1], b[2], b[3]], WHITE, 0.18)
+    cx = e["x"]
+    p.box([cx - 1.6, e["slot"][1], cx + 1.6, e["slot"][3]], C["slot_black"])
+
+
+def draw_print(p, e):
+    t, col = e["type"], C.get(e.get("colour", "print_white"), C["print_white"])
+    if t == "text":
+        p.text(e["label"], e["bbox"], e["cap_h"], C["print_white"])
+    elif t == "line":
+        p.line(e["points"], e["stroke"], col)
+    elif t == "groove":
+        groove(p, e["points"][0], e["points"][1], e["stroke"])
+    elif t == "scale":
+        for k in range(e["n"]):
+            y = e["y0"] + k * e["pitch"]
+            p.box([e["bbox"][0], y - e["tick_w"] / 2, e["bbox"][2], y + e["tick_w"] / 2], col, r=e["tick_w"] * 0.45)
+    elif t == "ring":
+        p.ellipse([e["x"] - e["r"], e["y"] - e["r"], e["x"] + e["r"], e["y"] + e["r"]], col, width=e["stroke"])
+    elif t == "dot":
+        p.ellipse([e["x"] - e["r"], e["y"] - e["r"], e["x"] + e["r"], e["y"] + e["r"]], col)
+    elif t == "arrowhead":
+        arrowhead(p, (e["x"], e["y"]), e["dir_deg"], e["size"], col)
+    elif t == "arc":
+        p.arc(e["x"], e["y"], e["r"], e["start_deg"], e["end_deg"], e["stroke"], col)
+        tip = polar(e["x"], e["y"], e["r"], e["start_deg"])   # the ends point down at the b and # signs
+        arrowhead(p, (tip[0] + 0.2, tip[1] + 1.2), 200, 1.5, col)
+        tip = polar(e["x"], e["y"], e["r"], e["end_deg"])
+        arrowhead(p, (tip[0] - 0.2, tip[1] + 1.2), 160, 1.5, col)
+
+
+def render_static(p, keep):
+    """The panel without its moving parts; keep(e) picks the print and controls of this slice."""
+    p.box([p.ox - 50, p.oy - 50, p.ox + 1000, p.oy + 1000], (0x1b, 0x1a, 0x19))
+    cs = C["case"]
+    p.box([0, 0, 570, 310], None, r=3.0, grad=(brighter(cs, 0.15), (0, 0), darker(cs, 0.25), (0, 310)))
+    for e in ELEMENTS:
+        if e["type"] != "region":
+            continue
+        b, col, st = e["bbox"], C[e["colour"]], e["style"]
+        if st == "shelf":
+            p.box(b, col)
+            p.box([b[0], 4.0, b[2], 18.4], None, grad=(darker(col, 0.05), (0, 4.0), darker(C["shelf_dark"], 0.12), (0, 18.4)))
+            p.box([b[0], 18.4, b[2], 19.3], BLACK, 0.3)
+        elif st == "raised":
+            p.box(b, None, grad=(brighter(col, 0.06), (0, b[1]), darker(col, 0.04), (0, b[3])))
+            p.box([b[0], b[1], b[2], b[1] + 0.35], WHITE, 0.22)
+        elif st in ("lower", "keybed"):
+            p.box(b, col)
+    y0, y1 = 162.6, 166.0     # the raised panel's lit front face
+    for b in ([3.5, y0, 88.6, y1], [537.9, y0, 566.5, y1]):
+        p.box(b, None, grad=(brighter(C["panel"], 0.42), (0, y0), brighter(C["panel"], 0.12), (0, y1)))
+    p.box([3.5, y0, 566.5, y0 + 0.3], BLACK, 0.3)
+    p.box([88.6, y0, 537.9, y0 + 1.6], None, grad=((0x3a, 0x38, 0x35), (0, y0), (0x1d, 0x1c, 0x1b), (0, y0 + 1.6)))
+    for e in ELEMENTS + [QUALITY]:
+        if not keep(e):
+            continue
+        if e["type"] in ("slider", "vswitch"):
+            channel(p, e)
+        elif e["type"] == "hswitch":
+            b = e["bbox"]
+            hh = (b[3] - b[1]) / 2
+            p.box(b, C["slot_black"], r=hh)
+            p.outline([b[0] + 0.2, b[1] + 0.25, b[2] + 0.2, b[3] + 0.25], WHITE, 0.2, 0.3, r=hh)
+    for t in ("groove", "scale", "line", "arc", "ring", "dot", "arrowhead", "text"):
+        for e in ELEMENTS + QUALITY_PRINT:
+            if e["type"] == t and (t == "groove" or keep(e)):
+                draw_print(p, e)
+    for e in ELEMENTS:   # printed knob scales and the rotary switches' detent ticks
+        if not keep(e):
+            continue
+        if e["type"] == "knob" and e.get("ticks"):
+            n = e["ticks"]
+            for i in range(n):
+                a = e["min_deg"] + (e["max_deg"] - e["min_deg"]) * i / (n - 1)
+                p.line([polar(e["x"], e["y"], e["tick_r"][0], a), polar(e["x"], e["y"], e["tick_r"][1], a)], 0.55, C["print_white"])
+        elif e["type"] == "rotary":
+            for a in e["detents"]:
+                p.line([polar(e["x"], e["y"], e["tick_r"][0], a), polar(e["x"], e["y"], e["tick_r"][1], a)], 0.6, C["print_white"])
+
+
+# ---- moving parts (HardwareView::drawSlider / drawSwitch / drawKnob) -----------------------------------------------------
+STRIPES = {"green": C["stripe_green"], "orange": C["stripe_orange"], "yellow": C["stripe_yellow"]}
+
+
+def draw_slider_cap(p, e, v):
+    cx = e["x"]
+    cy = e["travel"][0] + (e["travel"][1] - e["travel"][0]) * v
+    w, h = e["cap_w"], e["cap_h"]
+    cap = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
+    p.box([cap[0] + 0.2, cap[1] + 0.7, cap[2] + 0.8, cap[3] + 1.3], BLACK, 0.45, r=1.0)
+    p.box(cap, None, r=0.9, grad=((0x30, 0x2e, 0x31), (cap[0], cap[1]), (0x16, 0x15, 0x17), (cap[0], cap[3])))
+    p.box([cap[0] + 0.5, cap[1] + 0.35, cap[2] - 0.5, cap[1] + 0.75], WHITE, 0.13)
+    p.box([cap[0] + 0.35, cap[1] + 0.5, cap[0] + 0.7, cap[3] - 0.5], WHITE, 0.13)
+    p.box([cap[0] + 0.6, cy + h * 0.16, cap[2] - 0.6, cy + h * 0.16 + 0.45], BLACK, 0.35)
+    s = STRIPES[e["stripe"]]
+    p.box([cap[0] + 0.6, cy - 0.45, cap[2] - 0.6, cy + 0.4], s)
+    p.box([cap[0] + 0.6, cy - 0.45, cap[2] - 0.6, cy - 0.2], brighter(s, 0.6), 0.7)
+
+
+def draw_vswitch(p, e, d):
+    cx, y = e["x"], e["positions"][d]
+    w, h = e["cap_w"] - 0.6, e["cap_h"]
+    cap = [cx - w / 2, y - h * 0.47, cx + w / 2, y - h * 0.47 + h]
+    p.box([cap[0] + 0.2, cap[1] + 0.7, cap[2] + 0.8, cap[3] + 1.3], BLACK, 0.45, r=1.0)
+    p.box(cap, None, r=1.1, grad=((0x2e, 0x2c, 0x30), (cap[0], cap[1]), (0x14, 0x13, 0x15), (cap[0], cap[3])))
+    p.box([cap[0] + 0.35, cap[1] + 0.6, cap[0] + 0.7, cap[3] - 0.6], WHITE, 0.12)
+    p.box([cx - 1.4, cap[3], cx + 1.4, cap[3] + 1.3], (0x0a, 0x0a, 0x0a))
+    s = C["stripe_yellow"]
+    p.box([cap[0] + 0.7, y - 0.42, cap[2] - 0.7, y + 0.43], s)
+    p.box([cap[0] + 0.7, y - 0.42, cap[2] - 0.7, y - 0.17], brighter(s, 0.6), 0.6)
+
+
+def draw_hswitch(p, e, d):
+    x, y = e["positions"][d], (e["bbox"][1] + e["bbox"][3]) / 2
+    r = e["lever_d"] / 2
+    p.ellipse([x - r + 0.4, y - r + 0.6, x + r + 0.4, y + r + 0.6], BLACK, 0.5)
+    p.ellipse([x - r, y - r, x + r, y + r], None, grad=((0xf4, 0xf2, 0xee), (x - r * 0.4, y - r * 0.5), (0x6d, 0x6a, 0x64), (x + r, y + r), True))
+
+
+def draw_pointer(p, cx, cy, r, a):
+    p.line([polar(cx, cy, r * 0.5, a), polar(cx, cy, r * 0.97, a)], 0.9, C["knob_pointer"])
+
+
+# ---- skin JSON -----------------------------------------------------------------------------------------------------------
 class Obj:
     def __init__(self, *pairs):
         self.pairs = list(pairs)
@@ -91,6 +445,7 @@ def act(on, handler, extra=""):
     return {"version": 1, "onAction": on, "handler": handler, "handleName": "Data", "additionalData": extra}
 
 
+ACCENT = "fff08a2e"   # the caps' orange line
 FOCUS = {"version": 1, "backgroundColour": "00000000", "outlineColour": ACCENT, "backgroundInset": 4.0, "outlineThickness": 2.0}
 QL = [act("Mouse Down", "Q-Link"), act("Double Click", "Show Overlay", "knob overlay"), act("Enter Pressed", "Show Overlay", "knob overlay")]
 
@@ -99,12 +454,6 @@ def focus_ring(b):
     e = entry("focus", "Focus", FOCUS, b)
     e["bounds"]["whenVisible"] = "WhenFocussed"
     return e
-
-
-def label(b, remap, h=22.0, colour="ffeceef0"):
-    style = {"version": 1, "font": {"version": 1, "name": FONT, "style": "SemiBold", "height": h}, "colour": colour,
-             "justification": "horizontallyCentred verticallyCentred", "case": "Original"}
-    return entry("label", "Label", {"version": 1, "textStyle": style, "type": "Value", "handleName": "Data"}, b, remap)
 
 
 def overlay_def():
@@ -119,282 +468,252 @@ DEFS = {}
 
 
 def strip_def(strip, w, h, frames):
-    """A film strip dragged vertically (a fader or a knob), a focus ring, Q-Link on touch, the overlay on double tap / Enter."""
+    """A film strip dragged vertically, a focus ring, Q-Link on touch, the overlay on double tap / Enter."""
     key = "ctl_" + os.path.splitext(strip)[0]
-    if key not in DEFS:
-        DEFS[key] = component([
-            focus_ring(B(-4, -4, w + 8, h + 8)),
-            entry("strip", "Knob", {"version": 3, "knobType": "FilmStrip", "filmStrip": strip, "numFrames": frames, "invert": False,
-                                    "dragOrientation": "Vertical", "handleName": "Data"}, B(0, 0, w, h)),
-        ], actions=QL)
+    DEFS[key] = component([
+        focus_ring(B(-3, -3, w + 6, h + 6)),
+        entry("strip", "Knob", {"version": 3, "knobType": "FilmStrip", "filmStrip": strip, "numFrames": frames, "invert": False,
+                                "dragOrientation": "Vertical", "handleName": "Data"}, B(0, 0, w, h)),
+    ], actions=QL)
     return key
 
 
 def save(im, name):
-    im.save(os.path.join(OUT, name))
+    im.save(os.path.join(OUT, name), optimize=True)
     return name
 
 
-# ---- art --------------------------------------------------------------------------------------------------------------------
-FW, FH = 44, 250            # fader picture (slot + cap); its travel is the cap centre from CAP_H/2 to FH - CAP_H/2
-CAP_W, CAP_H = 40, 24
-FADER_FRAMES = 61           # 61 x 250 px under the MPC's 16384 px strip limit
-KNOB = 116
-KNOB_FRAMES = 128
+# ---- a view: a slice of the panel on the page ----------------------------------------------------------------------------
+class View:
+    def __init__(self, win, scale, page_x, page_w, keep):
+        """win = (x0, y0), the mm at the view's top left; the view is page_w x H px at page x page_x."""
+        self.x0, self.y0, self.s, self.px, self.pw, self.keep = win[0], win[1], scale, page_x, page_w, keep
 
+    def to_page(self, x, y):
+        return (self.px + (x - self.x0) * self.s, (y - self.y0) * self.s)
 
-def fader_strip(name, short=False):
-    h = 170 if short else FH
-    frames = FADER_FRAMES if not short else 91
-    strip = Image.new("RGBA", (FW, h * frames), (0, 0, 0, 0))
-    for f in range(frames):
-        im = Image.new("RGBA", (FW, h), (0, 0, 0, 0))
-        d = ImageDraw.Draw(im)
-        d.rounded_rectangle([FW // 2 - 4, 4, FW // 2 + 3, h - 5], 3, fill=(10, 10, 11), outline=(70, 72, 76))
-        cy = (h - CAP_H / 2) - (h - CAP_H) * f / (frames - 1)
-        x0, y0 = (FW - CAP_W) // 2, int(round(cy - CAP_H / 2))
-        d.rounded_rectangle([x0 + 1, y0 + 2, x0 + CAP_W, y0 + CAP_H + 1], 4, fill=(0, 0, 0, 120))      # shadow
-        d.rounded_rectangle([x0, y0, x0 + CAP_W - 1, y0 + CAP_H - 1], 4, fill=(66, 69, 74), outline=(18, 19, 21))
-        d.rectangle([x0 + 2, y0 + 2, x0 + CAP_W - 3, y0 + CAP_H // 2 - 2], fill=(84, 88, 94))             # lit upper half
-        d.line([(x0 + 4, y0 + CAP_H // 2), (x0 + CAP_W - 5, y0 + CAP_H // 2)], fill=(245, 245, 245), width=3)
-        strip.paste(im, (0, f * h))
-    assert strip.height <= 16384, "film strip too tall for the MPC"
-    return save(strip, name), h, frames
+    def page_box(self, b, pad=0.0):
+        x0, y0 = self.to_page(b[0] - pad, b[1] - pad)
+        x1, y1 = self.to_page(b[2] + pad, b[3] + pad)
+        return [int(math.floor(x0)), int(math.floor(y0)), int(math.ceil(x1)), int(math.ceil(y1))]
 
+    def painter_for(self, pb):
+        """A painter for the page px box pb = [x0, y0, x1, y1]."""
+        return Painter(pb[2] - pb[0], pb[3] - pb[1], self.x0 + (pb[0] - self.px) / self.s, self.y0 + pb[1] / self.s, self.s)
 
-def knob_strip(name):
-    """128 frames, -135 to +135 degrees: a dark cap with a white pointer, the scale baked in the page."""
-    import math
-    s = KNOB * 3
-    strip = Image.new("RGBA", (KNOB, KNOB * KNOB_FRAMES), (0, 0, 0, 0))
-    for f in range(KNOB_FRAMES):
-        im = Image.new("RGBA", (s, s), (0, 0, 0, 0))
-        d = ImageDraw.Draw(im)
-        c, r = s / 2, s * 0.36
-        d.ellipse([c - r + 6, c - r + 9, c + r + 6, c + r + 9], fill=(0, 0, 0, 110))
-        d.ellipse([c - r, c - r, c + r, c + r], fill=(30, 31, 34), outline=(12, 12, 13), width=6)
-        d.ellipse([c - r * 0.82, c - r * 0.82, c + r * 0.82, c + r * 0.82], fill=(52, 55, 60))
-        a = math.radians(-135 + 270 * f / (KNOB_FRAMES - 1))
-        x1, y1 = c + math.sin(a) * r * 0.28, c - math.cos(a) * r * 0.28
-        x2, y2 = c + math.sin(a) * r * 0.92, c - math.cos(a) * r * 0.92
-        d.line([(x1, y1), (x2, y2)], fill=(245, 245, 245), width=12)
-        strip.paste(im.resize((KNOB, KNOB), Image.LANCZOS), (0, f * KNOB))
-    return save(strip, name)
-
-
-def key_art(w, h, caption, lit):
-    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.rounded_rectangle((0, 0, w - 1, h - 1), 6, fill=(36, 70, 98) if lit else (28, 29, 32),
-                        outline=ACCENT_RGB if lit else (84, 88, 94), width=2)
-    if lit:   # the LED
-        d.rounded_rectangle((7, h // 2 - 4, 13, h // 2 + 4), 2, fill=(255, 92, 72))
-    size = 17 if len(caption) <= 6 else 15
-    d.text((w / 2 + (5 if lit else 0), h / 2 + 1), caption, font=ttf(size, "Bold"), fill=INK if lit else INK_DIM, anchor="mm")
-    return im
-
-
-def fader_scale(d, cx, top, h, numbers=False):
-    """0-10 ticks left of a fader slot; numbers on the first fader of a section (as the panel prints them)."""
-    for i in range(11):
-        y = top + (h - CAP_H / 2) - (h - CAP_H) * i / 10
-        long = i % 5 == 0
-        d.line([(cx - (30 if long else 27), y), (cx - 22, y)], fill=INK_DIM, width=2)
-        if numbers and long:
-            d.text((cx - 33, y), str(i), font=ttf(12), fill=INK_DIM, anchor="rm")
+    def background(self):
+        p = self.painter_for([self.px, 0, self.px + self.pw, H])
+        render_static(p, self.keep)
+        return p.result()
 
 
 class Page:
     def __init__(self, name, fn):
-        self.name, self.fn, self.kids, self.extent, self.qrows = name, fn, [], {}, []
+        self.name, self.fn, self.kids, self.extent, self.qrows, self.overlap_ok = name, fn, [], {}, [], False
 
-    def fader(self, key, cx, top, strip, value=True):
-        name, h, frames = strip
-        self.kids.append(entry(key, strip_def(name, FW, h, frames), {"version": 1, "handleName": "Data"},
-                               B(cx - FW // 2, top, FW, h), P(key), focus="Yes"))
-        if value:
-            self.kids.append(label(B(cx - 34, top + h + 6, 68, 26), P(key), h=24.0))
-        self.extent[key] = (cx - 36, top - 4, cx + 36, top + h + 36)
+    def grow(self, key, b):
+        e = self.extent.get(key)
+        self.extent[key] = list(b) if e is None else [min(e[0], b[0]), min(e[1], b[1]), max(e[2], b[2]), max(e[3], b[3])]
 
-    def knob(self, key, cx, cy, strip):
-        self.kids.append(entry(key, strip_def(strip, KNOB, KNOB, KNOB_FRAMES), {"version": 1, "handleName": "Data"},
-                               B(cx - KNOB // 2, cy - KNOB // 2, KNOB, KNOB), P(key), focus="Yes"))
-        self.kids.append(label(B(cx - 50, cy + KNOB // 2 + 34, 100, 28), P(key), h=24.0))
-        self.extent[key] = (cx - 76, cy - KNOB // 2 - 6, cx + 76, cy + KNOB // 2 + 66)
+    def strip(self, key, view, pb, frames, draw, base=None):
+        """A film strip over page box pb; draw(painter, frame) draws one frame over base (drawn once, copied) or nothing."""
+        w, h = pb[2] - pb[0], pb[3] - pb[1]
+        assert h * frames <= 16384, "%s: film strip too tall for the MPC (%d)" % (key, h * frames)
+        strip = Image.new("RGBA", (w, h * frames), (0, 0, 0, 0))
+        for f in range(frames):
+            p = base.copy() if base else view.painter_for(pb)
+            draw(p, f)
+            strip.paste(p.result(), (0, f * h))
+        name = save(strip, "%s.png" % key)
+        self.kids.append(entry(key, strip_def(name, w, h, frames), {"version": 1, "handleName": "Data"},
+                               B(pb[0], pb[1], w, h), P(key), focus="Yes"))
+        self.grow(key, pb)
+        return pb
 
-    def radio(self, key, x, y, w, h, gap=6, horizontal=False):
-        opts = CHOICES[key]
-        for i, o in enumerate(opts):
-            on = save(key_art(w, h, o, True), "%s_%d_on.png" % (key, i))
-            off = save(key_art(w, h, o, False), "%s_%d_off.png" % (key, i))
-            bx, by = (x + i * (w + gap), y) if horizontal else (x, y + i * (h + gap))
-            self.kids.append(entry("%s %d" % (key, i), "Button", {"version": 2, "onImage": on, "offImage": off, "buttonId": i,
-                                                                 "numButtonsInGroup": len(opts), "handleName": "Data",
-                                                                 "gestureBehaviour": GESTURE}, B(bx, by, w, h), P(key)))
-        n = len(opts)
-        self.extent[key] = (x - 4, y - 4, x + (n * (w + gap) if horizontal else w) + 4, y + (h if horizontal else n * (h + gap)) + 4)
+    def slider(self, view, e, frames=51):
+        key = PARAM[e["param"]]
+        cx, w, h = e["x"], e["cap_w"], e["cap_h"]
+        b = [cx - w / 2 - 0.3, min(e["travel"]) - h / 2 - 0.3, cx + w / 2 + 1.1, max(e["travel"]) + h / 2 + 1.6]
+        self.strip(key, view, view.page_box(b), frames, lambda p, f: draw_slider_cap(p, e, f / (frames - 1)))
+
+    def vswitch(self, view, e):
+        key = PARAM[e["param"]]
+        w, h, ps = e["cap_w"], e["cap_h"], e["positions"]
+        b = [e["x"] - w / 2 - 0.3, ps[0] - h * 0.47 - 0.3, e["x"] + w / 2 + 1.1, ps[-1] + h * 0.53 + 1.6]
+        sb = self.strip(key, view, view.page_box(b), len(ps), lambda p, f: draw_vswitch(p, e, f))
+        self.zones(key, view, sb)
+
+    def hswitch(self, view, e):
+        key = PARAM[e["param"]]
+        sb = self.strip(key, view, view.page_box(e["bbox"], pad=0.6), len(e["positions"]),
+                        lambda p, f: draw_hswitch(p, e, e["order"].index(f)))
+        self.zones(key, view, sb)
+
+    def _knob_base(self, view, e):
+        r = e["d"] / 2
+        pb = view.page_box([e["x"] - r - 0.6, e["y"] - r - 0.6, e["x"] + r + 2.0, e["y"] + r + 3.2])
+        base = view.painter_for(pb)
+        knob_body(base, e["x"], e["y"], r)
+        return pb, base, r
+
+    def rotary(self, view, e):
+        key = PARAM[e["param"]]
+        pb, base, r = self._knob_base(view, e)
+        self.strip(key, view, pb, len(e["detents"]), lambda p, f: draw_pointer(p, e["x"], e["y"], r, e["detents"][f]), base)
+        q = r * 0.8   # the legends may cover the strip's corners, not the knob
+        self.zones(key, view, view.page_box([e["x"] - q, e["y"] - q, e["x"] + q, e["y"] + q]))
+
+    def knob(self, view, e, frames=128):
+        key = PARAM[e["param"]]
+        pb, base, r = self._knob_base(view, e)
+        frames = min(frames, 16384 // (pb[3] - pb[1]))
+        a0, a1 = e["min_deg"], e["max_deg"]
+        self.strip(key, view, pb, frames, lambda p, f: draw_pointer(p, e["x"], e["y"], r, a0 + (a1 - a0) * f / (frames - 1)), base)
+
+    def zones(self, key, view, keep_off):
+        """Transparent radio buttons over each position's printed legend: tap a legend to pick it."""
+        boxes = []
+        for ids in LEGENDS[key]:
+            bs = [bbox_of(EL[i]) for i in ids]
+            z = view.page_box([min(b[0] for b in bs), min(b[1] for b in bs), max(b[2] for b in bs), max(b[3] for b in bs)], pad=1.2)
+            for a in (0, 1):                # at least a fingertip
+                if z[a + 2] - z[a] < MIN_ZONE:
+                    c = (z[a] + z[a + 2]) // 2
+                    z[a], z[a + 2] = c - MIN_ZONE // 2, c + MIN_ZONE // 2
+            boxes.append(z)
+        for i in range(len(boxes)):         # neighbours meet half way
+            for j in range(i + 1, len(boxes)):
+                a, b = boxes[i], boxes[j]
+                if a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]:
+                    ox, oy = min(a[2], b[2]) - max(a[0], b[0]), min(a[3], b[3]) - max(a[1], b[1])
+                    if ox < oy:
+                        l, r = (a, b) if a[0] < b[0] else (b, a)
+                        l[2] = r[0] = (l[2] + r[0]) // 2
+                    else:
+                        t, u = (a, b) if a[1] < b[1] else (b, a)
+                        t[3] = u[1] = (t[3] + u[1]) // 2
+        s = keep_off
+        for z in boxes:                     # and keep off the switch itself
+            if z[0] < s[2] and s[0] < z[2] and z[1] < s[3] and s[1] < z[3]:
+                left = [(s[0] - z[0], 0), (z[2] - s[2], 1), (s[1] - z[1], 2), (z[3] - s[3], 3)]
+                side = max(left)[1]
+                if side == 0:
+                    z[2] = s[0]
+                elif side == 1:
+                    z[0] = s[2]
+                elif side == 2:
+                    z[3] = s[1]
+                else:
+                    z[1] = s[3]
+        for i, z in enumerate(boxes):
+            self.kids.append(entry("%s %d" % (key, i), "Button", {"version": 2, "onImage": "blank.png", "offImage": "blank.png", "buttonId": i,
+                                                                 "numButtonsInGroup": len(boxes), "handleName": "Data",
+                                                                 "gestureBehaviour": GESTURE}, B(z[0], z[1], z[2] - z[0], z[3] - z[1]), P(key)))
+            self.grow(key, z)
+
+    def controls(self, view):
+        for e in ELEMENTS + [QUALITY]:
+            if e.get("param") not in PARAM or not view.keep(e):
+                continue
+            {"slider": self.slider, "vswitch": self.vswitch, "hswitch": self.hswitch, "rotary": self.rotary,
+             "knob": self.knob}[e["type"]](view, e)
 
     def tab(self, art):
         kids = [entry("bg", "Image", {"version": 2, "imageType": "Regular", "colour": "0", "image": art}, B(0, 0, W, H))] + self.kids
         rects = []
         for g in self.qrows:
-            assert len(g) == 4, g
+            assert 1 <= len(g) <= 4, g
             ex = [self.extent[k] for k in g]
-            rects.append((max(min(e[0] for e in ex), 2), max(min(e[1] for e in ex), 2),
-                          min(max(e[2] for e in ex), W - 2), min(max(e[3] for e in ex), H - 2)))
-        for i in range(len(rects)):
-            for j in range(i):
-                a, b = rects[i], rects[j]
-                assert a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1], "%s: Q-Link blocks %d and %d overlap" % (self.name, j, i)
+            rects.append((max(min(e[0] for e in ex) - 3, 2), max(min(e[1] for e in ex) - 3, 2),
+                          min(max(e[2] for e in ex) + 3, W - 2), min(max(e[3] for e in ex) + 3, H - 2)))
+        if not self.overlap_ok:
+            for i in range(len(rects)):
+                for j in range(i):
+                    a, b = rects[i], rects[j]
+                    assert a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1], "%s: Q-Link blocks %d and %d overlap" % (self.name, j, i)
         self.rects = rects
         return {"version": 1, "tabName": self.name, "fnKeyIndex": self.fn, "fnKeySubIndex": 0,
-                "componentDefinition": component(kids, background=bg("ff28292e")),
+                "componentDefinition": component(kids, background=bg("ff1b1a19")),
                 "qlinkBoundsData": [B(r[0], r[1], r[2] - r[0], r[3] - r[1]) for r in rects]}
 
 
-def page_base():
-    im = Image.new("RGB", (W, H), CASE)
-    d = ImageDraw.Draw(im)
-    for y in range(H):   # a slight vertical shade
-        t = y / H
-        d.line([(0, y), (W, y)], fill=tuple(int(CASE[i] * (1 - t) + CASE2[i] * t) for i in range(3)))
-    return im, d
+# ---- the tabs ------------------------------------------------------------------------------------------------------------
+MAIN_Y = (31.5, 123.6)        # section titles to the button strip
 
 
-def section(d, x0, x1, y0, y1, title):
-    d.rounded_rectangle([x0, y0, x1, y1], 8, fill=BOX, outline=BOX_EDGE, width=2)
-    d.rectangle([x0 + 10, y0 + 30, x1 - 10, y0 + 32], fill=ACCENT_RGB)
-    size = 17
-    while ttf(size, "Bold").getlength(title) > x1 - x0 - 10 and size > 10:
-        size -= 1
-    d.text(((x0 + x1) / 2, y0 + 16), title, font=ttf(size, "Bold"), fill=INK, anchor="mm")
+def main_keep(x0, x1):
+    def keep(e):
+        if e["id"] in DROP or e["type"] in UNPRINTED:
+            return False
+        c = centre(e)
+        return x0 <= c[0] <= x1 and MAIN_Y[0] <= c[1] <= MAIN_Y[1]
+    return keep
 
 
-def caption(d, cx, y, text, size=15):
-    d.text((cx, y), text, font=ttf(size, "Bold"), fill=INK, anchor="mm")
+def lower_keep(e):
+    if e["id"] in DROP or e["type"] in UNPRINTED:
+        return False
+    c = centre(e)
+    return c[0] < 88.6 and c[1] > 166.0
 
 
-# ---- PANEL ----------------------------------------------------------------------------------------------------------------
-PITCH, X0 = 73, 20
-COLS = ["lfo_rate", "vco_mod", "pulse_width", "pulse_level", "saw_level", "sub_level", "noise_level",
-        "vcf_freq", "vcf_res", "vcf_env", "vcf_mod", "vcf_kybd", None, "attack", "decay", "sustain", "release"]
-CAPS = {"lfo_rate": "RATE", "vco_mod": "MOD", "pulse_width": "PW", "pulse_level": "PULSE", "saw_level": "SAW", "sub_level": "SUB",
-        "noise_level": "NOISE", "vcf_freq": "FREQ", "vcf_res": "RES", "vcf_env": "ENV", "vcf_mod": "MOD", "vcf_kybd": "KYBD",
-        "attack": "A", "decay": "D", "sustain": "S", "release": "R"}
-SECTIONS = [("MODULATOR", 0, 0), ("VCO", 1, 2), ("SOURCE MIXER", 3, 6), ("VCF", 7, 11), ("VCA", 12, 12), ("ENV", 13, 16)]
-TOP = 96                     # faders' top
+def main_view(x0, x1, scale, page_x=0, page_w=W):
+    """Slice x0..x1 of the main panel, centred in page_w px."""
+    wx0 = (x0 + x1) / 2 - page_w / scale / 2
+    wy0 = (MAIN_Y[0] + MAIN_Y[1]) / 2 - H / scale / 2
+    return View((wx0, wy0), scale, page_x, page_w, main_keep(x0, x1))
 
 
-def cx_of(i):
-    return X0 + PITCH * i + PITCH // 2
+def build_page(name, fn, views, qrows, overlap_ok=False):
+    p = Page(name, fn)
+    art = Image.new("RGBA", (W, H), (0x1b, 0x1a, 0x19, 255))
+    for v in views:
+        art.alpha_composite(v.background(), dest=(v.px, 0))
+        p.controls(v)
+    p.qrows, p.overlap_ok = qrows, overlap_ok
+    return p, save(art.convert("RGB"), "%s.png" % name.lower().replace("/", "_"))
 
 
-def panel_page():
-    p = Page("PANEL", 0)
-    im, d = page_base()
-    for title, a, b in SECTIONS:
-        section(d, X0 + PITCH * a + 3, X0 + PITCH * (b + 1) - 3, 8, H - 8, title)
-    strip = fader_strip("fader.png")
-    for i, key in enumerate(COLS):
-        if key is None:
-            continue
-        cx = cx_of(i)
-        fader_scale(d, cx, TOP, FH, numbers=any(i == a for _, a, _ in SECTIONS))
-        caption(d, cx, TOP - 22, CAPS[key])
-        d.rounded_rectangle([cx - 34, TOP + FH + 6, cx + 33, TOP + FH + 31], 5, fill=WELL)
-        p.fader(key, cx, TOP, strip)
-    # switches: under their sections
-    sy = TOP + FH + 52
-    bw, bh = 62, 38
-    caption(d, cx_of(0), sy, "WAVE", 14)
-    p.radio("lfo_wave", cx_of(0) - bw // 2, sy + 16, bw, bh)
-    caption(d, cx_of(1), sy, "RANGE", 14)
-    p.radio("range", cx_of(1) - bw // 2, sy + 16, bw, bh)
-    caption(d, cx_of(2), sy, "PWM", 14)
-    p.radio("pwm_source", cx_of(2) - bw // 2, sy + 16, bw, bh)
-    mx = (cx_of(4) + cx_of(5)) // 2
-    caption(d, mx, sy, "SUB OSC", 14)
-    p.radio("sub_mode", mx - 70, sy + 16, 140, bh)
-    caption(d, cx_of(12), TOP - 22, "MODE")
-    p.radio("vca_mode", cx_of(12) - bw // 2, TOP, bw, 46, gap=10)
-    ex = (cx_of(14) + cx_of(15)) // 2
-    caption(d, ex, sy, "TRIGGER", 14)
-    p.radio("env_trigger", ex - 70, sy + 16, 140, bh)
-    # the wordmark in the VCF's switch space
-    vx = (cx_of(7) + cx_of(11)) // 2
-    d.text((vx, sy + 52), "MONO-101", font=ttf(46, "Bold"), fill=INK, anchor="mm")
-    d.text((vx, sy + 96), "MONOPHONIC SYNTHESIZER", font=ttf(15, "Bold"), fill=INK_DIM, anchor="mm")
-    d.text((vx, sy + 120), "CIRCUIT  MODEL  BY  LEMUS", font=ttf(13), fill=INK_DIM, anchor="mm")
-    faders = [k for k in COLS if k]
-    p.qrows = [faders[i:i + 4] for i in range(0, 16, 4)]
-    return p, save(im, "panel.png")
+S_MAIN = W / (224.5 - 3.0)    # MOD/VCO fills the width; the other slices use its scale
 
 
-# ---- CONTROL ----------------------------------------------------------------------------------------------------------------
-def control_page():
-    p = Page("CONTROL", 1)
-    im, d = page_base()
-    kstrip = knob_strip("knob.png")
-    section(d, 24, 676, 8, H - 8, "CONTROLLER")
-    section(d, 700, 1052, 8, H - 8, "BENDER")
-    section(d, 1076, 1256, 8, H - 8, "QUALITY")
-    ky = 190
-    for key, cap, cx in [("volume", "VOLUME", 130), ("tune", "TUNE", 350), ("portamento", "PORTAMENTO", 570)]:
-        import math
-        for i in range(11):   # the knob's scale
-            a = math.radians(-135 + 27 * i)
-            r0, r1 = KNOB / 2 + 6, KNOB / 2 + (16 if i % 5 == 0 else 11)
-            d.line([(cx + math.sin(a) * r0, ky - math.cos(a) * r0), (cx + math.sin(a) * r1, ky - math.cos(a) * r1)], fill=INK_DIM, width=2)
-        caption(d, cx, ky + KNOB // 2 + 18, cap)
-        d.rounded_rectangle([cx - 50, ky + KNOB // 2 + 34, cx + 49, ky + KNOB // 2 + 61], 5, fill=WELL)
-        p.knob(key, cx, ky, kstrip)
-    d.text((350 - 64, ky + 70), "-5", font=ttf(13), fill=INK_DIM, anchor="mm")
-    d.text((350 + 64, ky + 70), "+5", font=ttf(13), fill=INK_DIM, anchor="mm")
-    caption(d, 570, 410, "PORTAMENTO MODE", 14)
-    p.radio("porta_mode", 570 - 3 * 66 // 2 - 6, 428, 62, 40, gap=6, horizontal=True)
-    d.text((350, 560), "MONO-101", font=ttf(40, "Bold"), fill=INK, anchor="mm")
-    short = fader_strip("fader_short.png", short=True)
-    for key, cap, cx in [("bend_vco", "VCO", 790), ("bend_vcf", "VCF", 876), ("bend_lfo", "LFO MOD", 962)]:
-        top = 120
-        caption(d, cx, top - 22, cap)
-        fader_scale(d, cx, top, 170, numbers=key == "bend_vco")
-        d.rounded_rectangle([cx - 34, top + 170 + 6, cx + 33, top + 170 + 31], 5, fill=WELL)
-        p.fader(key, cx, top, short)
-    d.text((876, 366), "PITCH BEND: VCO, VCF", font=ttf(13), fill=INK_DIM, anchor="mm")
-    d.text((876, 386), "MOD WHEEL (CC1): LFO MOD", font=ttf(13), fill=INK_DIM, anchor="mm")
-    caption(d, 876, 430, "TRANSPOSE", 14)
-    p.radio("transpose", 876 - (3 * 56 + 12) // 2, 448, 56, 40, gap=6, horizontal=True)
-    p.radio("quality", 1166 - 60, 120, 120, 50, gap=12)
-    for i, t in enumerate(["HQ: 4x, as Lemus", "AUTO: ECO on Gen1,", "HQ on Gen2", "ECO: VCF at 2x"]):
-        d.text((1166, 330 + i * 22), t, font=ttf(13), fill=INK_DIM, anchor="mm")
-    p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"]]
-    return p, save(im, "control.png")
+def pages():
+    out = [build_page("MOD/VCO", 0, [main_view(3.0, 224.5, S_MAIN)],
+                      [["tune", "lfo_rate", "lfo_wave", "vco_mod"], ["range", "pulse_width", "pwm_source"]]),
+           build_page("MIX/VCF", 1, [main_view(223.9, 424.8, S_MAIN)],
+                      [["pulse_level", "saw_level", "sub_level", "sub_mode"], ["noise_level", "vcf_freq", "vcf_res", "vcf_env"],
+                       ["vcf_mod", "vcf_kybd"]])]
+    # VCA/ENV: the lower left panel at its own scale on the left, VCA and ENV at the main scale on the right
+    s_low = H / 146.0
+    low_w = int(round((90.6 - 1.5) * s_low))
+    low = View((1.5, 162.4), s_low, 0, low_w, lower_keep)
+    right = main_view(424.8, 558.6, S_MAIN, page_x=low_w, page_w=W - low_w)
+    out.append(build_page("VCA/ENV", 2, [low, right],
+                          [["attack", "decay", "sustain", "release"], ["vca_mode", "env_trigger"],
+                           ["volume", "portamento", "porta_mode", "transpose"], ["bend_vco", "bend_vcf", "bend_lfo", "quality"]],
+                          overlap_ok=True))   # the left panel's switches sit beside the bender sliders
+    return out
 
 
-# ---- preview (defaults, offline) ------------------------------------------------------------------------------------------
-def render_preview(p, art, defaults):
+# ---- preview (defaults, offline) -----------------------------------------------------------------------------------------
+def render_preview(p, art, defaults, zones=False):
     img = Image.open(os.path.join(OUT, art)).convert("RGBA")
     d = ImageDraw.Draw(img)
     for k in p.kids:
         cd, (x, y, w, h) = k["componentData"], [int(v) for v in k["bounds"]["bounds"].split()]
-        typ, data = cd["type"], cd["data"]
+        typ = cd["type"]
         remap = k["handle remapping"]["map"]
         idx = int(remap[0]["value"].split()[-1]) if remap else None
-        spec = defaults[idx] if idx is not None else {}
         if typ.startswith("ctl_"):
             sd = DEFS[typ]["componentsData"][1]["componentData"]["data"]
             strip = Image.open(os.path.join(OUT, sd["filmStrip"])).convert("RGBA")
-            fr = int(round(spec["default"] * (sd["numFrames"] - 1)))
+            fr = int(round(defaults[idx]["default"] * (sd["numFrames"] - 1)))
             img.alpha_composite(strip.crop((0, fr * h, w, fr * h + h)), (x, y))
-        elif typ == "Button":
-            n = data["numButtonsInGroup"]
-            cur = int(round(spec["default"] * (n - 1)))
-            img.alpha_composite(Image.open(os.path.join(OUT, data["onImage" if cur == data["buttonId"] else "offImage"])).convert("RGBA"), (x, y))
-        elif typ == "Label":
-            st = data["textStyle"]
-            d.text((x + w / 2, y + h / 2), spec.get("display", ""), font=ttf(st["font"]["height"] * DEVICE_TEXT), fill=INK, anchor="mm")
-    for r in p.rects:
-        d.rectangle(r, outline=(232, 60, 60), width=2)
+        elif typ == "Button" and zones:
+            d.rectangle([x, y, x + w - 1, y + h - 1], outline=(80, 160, 255), width=1)
+    if zones:
+        for r in p.rects:
+            d.rectangle(r, outline=(232, 60, 60), width=2)
     return img
 
 
@@ -403,20 +722,23 @@ def main():
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
-    pages = [panel_page(), control_page()]
-    tabs = [p.tab(art) for p, art in pages]
+    Image.new("RGBA", (4, 4), (0, 0, 0, 0)).save(os.path.join(OUT, "blank.png"))
+    built = pages()
+    tabs = [p.tab(art) for p, art in built]
+    used = {k for p, _ in built for k in p.extent}
+    missing = [k for k in LOCK if k not in used]
+    assert not missing, "parameters with no control: %s" % missing
     maps = []
-    for p, _ in pages:
+    for p, _ in built:
         q = {"Q-Link %d" % n: -1 for n in range(1, 17)}
         for gi, keys in enumerate(p.qrows):
             for i, key in enumerate(keys):
                 q["Q-Link %d" % (13 - 4 * gi + i)] = LOCK.index(key)
         maps.append({"Tab": p.fn + 1, "SubTab": 1, "Bank Direction": "RowTopDown", "Q-Links": q})
     defs = [{"key": "knob overlay", "value": overlay_def()}] + [{"key": k, "value": v} for k, v in DEFS.items()]
-    repl = [{"key": P(k), "value": v} for k, v in CHOICES.items()]
     tui = {"pageData": {"version": 1,
                         "componentDefinitions": {"version": 2, "importFiles": [], "localComponentDefinitions": defs},
-                        "replacementStrings": repl, "info": {"version": 1, "type": "CompleteDescription"}, "tabs": tabs}}
+                        "replacementStrings": [], "info": {"version": 1, "type": "CompleteDescription"}, "tabs": tabs}}
     open(os.path.join(OUT, "TUI.json"), "w").write(dump(tui) + "\n")
     ql = {"version": 4, "info": {"version": 1, "type": "CompleteDescription"},
           "Screen Mode Q-Links": {"version": 4, "map": maps}, "Program Mode Q-Links": {"Q-Link %d" % n: -1 for n in range(1, 17)}}
@@ -424,11 +746,14 @@ def main():
     names = [f.lower() for f in os.listdir(OUT)]
     assert len(names) == len(set(names)), "file names clash on a case-insensitive drive"
     if preview:
-        dump_path = os.path.join(ROOT, "build", "params.json")
-        defaults = json.load(open(dump_path))["params"]
+        defaults = json.load(open(os.path.join(ROOT, "build", "params.json")))["params"]
         os.makedirs(PREVIEW, exist_ok=True)
-        for p, art in pages:
-            render_preview(p, art, defaults).convert("RGB").save(os.path.join(PREVIEW, p.name.lower() + ".png"))
+        for f in os.listdir(PREVIEW):
+            os.remove(os.path.join(PREVIEW, f))
+        for p, art in built:
+            base = p.name.lower().replace("/", "_")
+            render_preview(p, art, defaults).convert("RGB").save(os.path.join(PREVIEW, base + ".png"))
+            render_preview(p, art, defaults, zones=True).convert("RGB").save(os.path.join(PREVIEW, base + "-zones.png"))
     print("wrote %s - %d tabs, %d files, %d KB" % (OUT, len(tabs), len(names), sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT)) // 1024))
 
 
