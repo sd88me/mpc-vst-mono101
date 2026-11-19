@@ -1,20 +1,275 @@
 {
  "source": "Mono-101's own patches (sd88me): classic 101 jobs and the circuitbenders mods. Panel units (0-10) and choice names; anything left out keeps Init's value.",
  "presets": [
-  {"name": "Acid 101", "params": {"saw_level": 10, "sub_level": 0, "vcf_freq": 3, "vcf_res": 8, "vcf_env": 7, "vcf_kybd": 5, "attack": 0, "decay": 3, "sustain": 0, "release": 1, "porta_mode": "Auto", "portamento": 2, "range": "16'"}},
-  {"name": "Sub Bass", "params": {"saw_level": 0, "pulse_level": 6, "pulse_width": 0, "sub_level": 10, "sub_mode": "1 Oct", "vcf_freq": 2.5, "vcf_res": 0, "vcf_env": 2, "vcf_kybd": 5, "attack": 0, "decay": 5, "sustain": 8, "release": 1, "range": "16'"}},
-  {"name": "Rubber Bass", "params": {"saw_level": 0, "pulse_level": 8, "pulse_width": 3, "sub_level": 8, "sub_mode": "2 Oct", "vcf_freq": 2, "vcf_res": 5, "vcf_env": 6, "vcf_kybd": 4, "attack": 0, "decay": 3.5, "sustain": 2, "release": 1, "range": "16'"}},
-  {"name": "PWM Lead", "params": {"saw_level": 6, "pulse_level": 10, "pulse_width": 6, "pwm_source": "LFO", "lfo_rate": 4.5, "lfo_wave": "Triangle", "sub_level": 0, "vcf_freq": 6, "vcf_res": 2, "vcf_env": 3, "vcf_kybd": 6, "attack": 0, "decay": 4, "sustain": 8, "release": 2, "porta_mode": "On", "portamento": 2}},
-  {"name": "Squelch Lead", "params": {"saw_level": 10, "sub_level": 0, "vcf_freq": 4, "vcf_res": 9, "vcf_env": 6, "vcf_kybd": 7, "attack": 0, "decay": 4, "sustain": 5, "release": 2, "porta_mode": "Auto", "portamento": 1.5, "range": "4'"}},
-  {"name": "Pluck", "params": {"saw_level": 0, "pulse_level": 10, "pulse_width": 4, "sub_level": 2, "vcf_freq": 2.5, "vcf_res": 4, "vcf_env": 6, "vcf_kybd": 8, "attack": 0, "decay": 2.5, "sustain": 0, "release": 2.5}},
-  {"name": "Hollow Arp", "params": {"saw_level": 0, "pulse_level": 10, "pulse_width": 7, "sub_level": 3, "vcf_freq": 4, "vcf_res": 6, "vcf_env": 4, "vcf_kybd": 7, "attack": 0, "decay": 3, "sustain": 2, "release": 2}},
-  {"name": "Wobble Bass", "params": {"saw_level": 10, "sub_level": 6, "vcf_freq": 2.5, "vcf_res": 6, "vcf_env": 2, "vcf_mod": 6, "lfo_rate": 5.5, "lfo_wave": "Triangle", "attack": 0, "decay": 5, "sustain": 10, "release": 1, "range": "16'"}},
-  {"name": "S&H Bleeps", "params": {"saw_level": 10, "sub_level": 0, "vcf_freq": 4, "vcf_res": 8, "vcf_env": 0, "vcf_mod": 6, "lfo_rate": 6, "lfo_wave": "Random", "attack": 0, "decay": 5, "sustain": 10, "release": 2}},
-  {"name": "Zap Kick", "params": {"saw_level": 0, "pulse_level": 3, "sub_level": 0, "vcf_freq": 1, "vcf_res": 10, "vcf_env": 10, "vcf_kybd": 0, "attack": 0, "decay": 3, "sustain": 0, "release": 2, "range": "16'"}},
-  {"name": "Noise Snare", "params": {"saw_level": 0, "pulse_level": 3, "sub_level": 0, "noise_level": 10, "vcf_freq": 6, "vcf_res": 2, "vcf_env": 5, "vcf_kybd": 3, "attack": 0, "decay": 2, "sustain": 0, "release": 2, "range": "4'"}},
-  {"name": "FM Growl", "params": {"saw_level": 10, "sub_level": 5, "vcf_freq": 3, "vcf_res": 5, "vcf_env": 4, "attack": 0, "decay": 5, "sustain": 8, "release": 1, "range": "16'", "fm_on": "On", "fm_source": "Sub 2 Oct", "fm_amount": 4}},
-  {"name": "Driven Bass", "params": {"saw_level": 10, "sub_level": 8, "vcf_freq": 2.5, "vcf_res": 6, "vcf_env": 6, "attack": 0, "decay": 3, "sustain": 3, "release": 1, "range": "16'", "drive_on": "On", "drive": 7}},
-  {"name": "Key Sync Wah", "params": {"saw_level": 10, "sub_level": 3, "vcf_freq": 3, "vcf_res": 6, "vcf_env": 2, "vcf_mod": 6, "lfo_rate": 3, "lfo_wave": "Triangle", "attack": 0, "decay": 5, "sustain": 10, "release": 2, "lfo_trig": "On"}},
-  {"name": "Buzz Pad", "params": {"saw_level": 8, "pulse_level": 6, "pulse_width": 5, "pwm_source": "LFO", "lfo_rate": 3, "sub_level": 0, "vcf_freq": 5, "vcf_res": 3, "vcf_env": 0, "attack": 5, "decay": 6, "sustain": 8, "release": 6, "pwm_mod_on": "On", "pwm_mod_source": "Sub 1 Oct"}}
+  {
+   "name": "Acid 101",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 0,
+    "vcf_freq": 3,
+    "vcf_res": 8,
+    "vcf_env": 7,
+    "vcf_kybd": 5,
+    "attack": 0,
+    "decay": 3,
+    "sustain": 0,
+    "release": 1,
+    "porta_mode": "Auto",
+    "portamento": 2,
+    "range": "16'"
+   }
+  },
+  {
+   "name": "Sub Bass",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 6,
+    "pulse_width": 0,
+    "sub_level": 10,
+    "sub_mode": "1 Oct",
+    "vcf_freq": 2.5,
+    "vcf_res": 0,
+    "vcf_env": 2,
+    "vcf_kybd": 5,
+    "attack": 0,
+    "decay": 5,
+    "sustain": 8,
+    "release": 1,
+    "range": "16'"
+   }
+  },
+  {
+   "name": "Rubber Bass",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 8,
+    "pulse_width": 3,
+    "sub_level": 8,
+    "sub_mode": "2 Oct",
+    "vcf_freq": 2,
+    "vcf_res": 5,
+    "vcf_env": 6,
+    "vcf_kybd": 4,
+    "attack": 0,
+    "decay": 3.5,
+    "sustain": 2,
+    "release": 1,
+    "range": "16'"
+   }
+  },
+  {
+   "name": "PWM Lead",
+   "params": {
+    "saw_level": 6,
+    "pulse_level": 10,
+    "pulse_width": 6,
+    "pwm_source": "LFO",
+    "lfo_rate": 4.5,
+    "lfo_wave": "Triangle",
+    "sub_level": 0,
+    "vcf_freq": 6,
+    "vcf_res": 2,
+    "vcf_env": 3,
+    "vcf_kybd": 6,
+    "attack": 0,
+    "decay": 4,
+    "sustain": 8,
+    "release": 2,
+    "porta_mode": "On",
+    "portamento": 2
+   }
+  },
+  {
+   "name": "Squelch Lead",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 0,
+    "vcf_freq": 4,
+    "vcf_res": 9,
+    "vcf_env": 6,
+    "vcf_kybd": 7,
+    "attack": 0,
+    "decay": 4,
+    "sustain": 5,
+    "release": 2,
+    "porta_mode": "Auto",
+    "portamento": 1.5,
+    "range": "4'"
+   }
+  },
+  {
+   "name": "Pluck",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 10,
+    "pulse_width": 4,
+    "sub_level": 2,
+    "vcf_freq": 2.5,
+    "vcf_res": 4,
+    "vcf_env": 6,
+    "vcf_kybd": 8,
+    "attack": 0,
+    "decay": 2.5,
+    "sustain": 0,
+    "release": 2.5
+   }
+  },
+  {
+   "name": "Hollow Arp",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 10,
+    "pulse_width": 7,
+    "sub_level": 3,
+    "vcf_freq": 4,
+    "vcf_res": 6,
+    "vcf_env": 4,
+    "vcf_kybd": 7,
+    "attack": 0,
+    "decay": 3,
+    "sustain": 2,
+    "release": 2
+   }
+  },
+  {
+   "name": "Wobble Bass",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 6,
+    "vcf_freq": 2.5,
+    "vcf_res": 6,
+    "vcf_env": 2,
+    "vcf_mod": 6,
+    "lfo_rate": 5.5,
+    "lfo_wave": "Triangle",
+    "attack": 0,
+    "decay": 5,
+    "sustain": 10,
+    "release": 1,
+    "range": "16'"
+   }
+  },
+  {
+   "name": "S&H Bleeps",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 0,
+    "vcf_freq": 4,
+    "vcf_res": 8,
+    "vcf_env": 0,
+    "vcf_mod": 6,
+    "lfo_rate": 6,
+    "lfo_wave": "Random",
+    "attack": 0,
+    "decay": 5,
+    "sustain": 10,
+    "release": 2
+   }
+  },
+  {
+   "name": "Zap Kick",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 3,
+    "sub_level": 0,
+    "vcf_freq": 1,
+    "vcf_res": 10,
+    "vcf_env": 10,
+    "vcf_kybd": 0,
+    "attack": 0,
+    "decay": 3,
+    "sustain": 0,
+    "release": 2,
+    "range": "16'"
+   }
+  },
+  {
+   "name": "Noise Snare",
+   "params": {
+    "saw_level": 0,
+    "pulse_level": 3,
+    "sub_level": 0,
+    "noise_level": 10,
+    "vcf_freq": 6,
+    "vcf_res": 2,
+    "vcf_env": 5,
+    "vcf_kybd": 3,
+    "attack": 0,
+    "decay": 2,
+    "sustain": 0,
+    "release": 2,
+    "range": "4'"
+   }
+  },
+  {
+   "name": "FM Growl",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 5,
+    "vcf_freq": 3,
+    "vcf_res": 5,
+    "vcf_env": 4,
+    "attack": 0,
+    "decay": 5,
+    "sustain": 8,
+    "release": 1,
+    "range": "16'",
+    "fm_source": "Sub 2 Oct",
+    "fm_amount": 4
+   }
+  },
+  {
+   "name": "Driven Bass",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 8,
+    "vcf_freq": 2.5,
+    "vcf_res": 6,
+    "vcf_env": 6,
+    "attack": 0,
+    "decay": 3,
+    "sustain": 3,
+    "release": 1,
+    "range": "16'",
+    "drive": 7
+   }
+  },
+  {
+   "name": "Key Sync Wah",
+   "params": {
+    "saw_level": 10,
+    "sub_level": 3,
+    "vcf_freq": 3,
+    "vcf_res": 6,
+    "vcf_env": 2,
+    "vcf_mod": 6,
+    "lfo_rate": 3,
+    "lfo_wave": "Triangle",
+    "attack": 0,
+    "decay": 5,
+    "sustain": 10,
+    "release": 2,
+    "lfo_trig": "On"
+   }
+  },
+  {
+   "name": "Buzz Pad",
+   "params": {
+    "saw_level": 8,
+    "pulse_level": 6,
+    "pulse_width": 5,
+    "pwm_source": "LFO",
+    "lfo_rate": 3,
+    "sub_level": 0,
+    "vcf_freq": 5,
+    "vcf_res": 3,
+    "vcf_env": 0,
+    "attack": 5,
+    "decay": 6,
+    "sustain": 8,
+    "release": 6,
+    "pwm_mod_source": "Sub 1 Oct"
+   }
+  }
  ]
 }

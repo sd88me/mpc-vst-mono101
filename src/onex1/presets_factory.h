@@ -61,10 +61,10 @@ static const FactoryPreset kFactoryPresets[] = {
 	{"S&H Bleeps", "saw_level=10 sub_level=0 vcf_freq=4 vcf_res=8 vcf_env=0 vcf_mod=6 lfo_rate=6 lfo_wave=2 attack=0 decay=5 sustain=10 release=2"},
 	{"Zap Kick", "saw_level=0 pulse_level=3 sub_level=0 vcf_freq=1 vcf_res=10 vcf_env=10 vcf_kybd=0 attack=0 decay=3 sustain=0 release=2 range=0"},
 	{"Noise Snare", "saw_level=0 pulse_level=3 sub_level=0 noise_level=10 vcf_freq=6 vcf_res=2 vcf_env=5 vcf_kybd=3 attack=0 decay=2 sustain=0 release=2 range=2"},
-	{"FM Growl", "saw_level=10 sub_level=5 vcf_freq=3 vcf_res=5 vcf_env=4 attack=0 decay=5 sustain=8 release=1 range=0 fm_on=1 fm_source=3 fm_amount=4"},
-	{"Driven Bass", "saw_level=10 sub_level=8 vcf_freq=2.5 vcf_res=6 vcf_env=6 attack=0 decay=3 sustain=3 release=1 range=0 drive_on=1 drive=7"},
+	{"FM Growl", "saw_level=10 sub_level=5 vcf_freq=3 vcf_res=5 vcf_env=4 attack=0 decay=5 sustain=8 release=1 range=0 fm_source=3 fm_amount=4"},
+	{"Driven Bass", "saw_level=10 sub_level=8 vcf_freq=2.5 vcf_res=6 vcf_env=6 attack=0 decay=3 sustain=3 release=1 range=0 drive=7"},
 	{"Key Sync Wah", "saw_level=10 sub_level=3 vcf_freq=3 vcf_res=6 vcf_env=2 vcf_mod=6 lfo_rate=3 lfo_wave=0 attack=0 decay=5 sustain=10 release=2 lfo_trig=1"},
-	{"Buzz Pad", "saw_level=8 pulse_level=6 pulse_width=5 pwm_source=0 lfo_rate=3 sub_level=0 vcf_freq=5 vcf_res=3 vcf_env=0 attack=5 decay=6 sustain=8 release=6 pwm_mod_on=1 pwm_mod_source=4"},
+	{"Buzz Pad", "saw_level=8 pulse_level=6 pulse_width=5 pwm_source=0 lfo_rate=3 sub_level=0 vcf_freq=5 vcf_res=3 vcf_env=0 attack=5 decay=6 sustain=8 release=6 pwm_mod_source=5"},
 };
 
 constexpr int kNumFactoryPresets = int(sizeof kFactoryPresets / sizeof kFactoryPresets[0]);

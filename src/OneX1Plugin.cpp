@@ -186,12 +186,12 @@ public:
 		addParam(mpc::choiceParam("transpose", "Transpose", {"L", "M", "H"}, 1));
 		addParam(mpc::choiceParam("quality", "Quality", {"HQ", "Auto", "ECO"}, 1));
 		addParam(mpc::choiceParam("drive_on", "Overdrive Mod", {"Off", "On"}, 0));
-		slider("drive", "Overdrive", 0.5f);
+		slider("drive", "Overdrive", 0.0f);
 		addParam(mpc::choiceParam("pwm_mod_on", "PWM Source Mod", {"Off", "On"}, 0));
-		addParam(mpc::choiceParam("pwm_mod_source", "PWM Source", {"Triangle", "Square", "Random", "Noise", "Sub 1 Oct", "Sub 2 Oct"}, 1));
+		addParam(mpc::choiceParam("pwm_mod_source", "PWM Source", {"Off", "Triangle", "Square", "Random", "Noise", "Sub 1 Oct", "Sub 2 Oct"}, 0));
 		addParam(mpc::choiceParam("fm_on", "VCF FM Mod", {"Off", "On"}, 0));
 		addParam(mpc::choiceParam("fm_source", "VCF FM Source", {"Pulse", "Saw", "Sub 1 Oct", "Sub 2 Oct", "Sub 2 Oct Pulse", "Noise"}, 0));
-		slider("fm_amount", "VCF FM Amount", 0.3f);
+		slider("fm_amount", "VCF FM Amount", 0.0f);
 		addParam(mpc::choiceParam("lfo_range", "LFO Range Mod", {"Slow", "Normal", "Fast"}, 1));
 		addParam(mpc::choiceParam("lfo_trig", "LFO Key Trig Mod", {"Off", "On"}, 0));
 		addParam(mpc::choiceParam("mods", "Circuit Bent", {"Pure", "Bent"}, 1));
@@ -219,7 +219,7 @@ public:
 			local(mpc::intParam(ids[k].c_str(), names[k].c_str(), 0, 1, 0));
 		}
 		addParam(mpc::choiceParam("tri_on", "Tri VCO Mod", {"Off", "On"}, 0));
-		slider("tri_level", "Tri VCO Level", 0.7f);
+		slider("tri_level", "Tri VCO Level", 0.0f);
 		addParam(mpc::choiceParam("lfo_sync", "LFO Sync Mod", {"Off", "On"}, 0));
 		addParam(mpc::choiceParam("lfo_div", "LFO Sync Division", {"1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 Bar", "2 Bars", "4 Bars"}, 4));
 		addProgram("Init", {});
@@ -440,13 +440,17 @@ private:
 		if (getInt(kModsMaster) == 0)
 			return c; // PURE: the stock board
 		auto &m = c.mods;
-		m.drive = getInt(kDriveOn) ? 1.0 + 7.0 * s(kDrive) : 1.0;
-		m.pwmSource = getInt(kPwmModOn) ? sh101::ModPwmSource(getInt(kPwmModSource)) : sh101::ModPwmSource::Stock;
-		m.fmSource = getInt(kFmOn) ? sh101::ModFmSource(getInt(kFmSource)) : sh101::ModFmSource::Off;
+		// Each mod is off at zero (DRIVE, AMOUNT, LEVEL at 0, PWM SOURCE at OFF); CIRCUIT's PURE turns them all off. The
+		// *_on switches of the first layout are no longer read.
+		m.drive = 1.0 + 7.0 * s(kDrive);
+		m.pwmSource = sh101::ModPwmSource(getInt(kPwmModSource) - 1);   // 0 = OFF: the stock LFO position
+		m.fmSource = sh101::ModFmSource(getInt(kFmSource));
 		m.fmAmount = s(kFmAmount);
+		if (m.fmAmount <= 0)
+			m.fmSource = sh101::ModFmSource::Off; // nothing to add: skip the work
 		m.lfoRateScale = kLfoScale[getInt(kLfoRange)];
 		m.lfoTrig = getInt(kLfoTrig) != 0;
-		m.triLevel = getInt(kTriOn) ? s(kTriLevel) : 0.0;
+		m.triLevel = s(kTriLevel);
 		return c;
 	}
 

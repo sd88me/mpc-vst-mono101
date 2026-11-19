@@ -3,14 +3,14 @@
 
 Layout: three tabs under a header (MONO-101, PRESET SAVE / DELETE: SAVE shows the drawn naming keyboard over the tab).
     VCO      CONTROLLER (VOLUME, TUNE, PORTAMENTO knobs stacked, the portamento switch), BENDER (VCO / VCF / LFO MOD
-             sliders, TRANSPOSE), MODULATOR (RATE, WAVE under it), VCO (MOD with RANGE under it, PW with PWM).
-    VCF      SOURCE MIXER, VCF, VCA, ENV; along the bottom SUB OSC, QUALITY, MODE, TRIGGER (horizontal switches).
+             sliders, TRANSPOSE), MODULATOR (RATE, WAVE under it), VCO (MOD with RANGE under it, PWM, PW).
+    VCF      SOURCE MIXER, VCF, VCA (MODE), ENV; along the bottom SUB OSC, QUALITY, TRIGGER (sideways switches).
     BENT     CIRCUIT BENT: CIRCUIT (PURE / BENT), PWM SOURCE, TRI VCO, OVERDRIVE, VCF FM, LFO (RANGE, DIV; KEY TRIG, SYNC):
-             the controls on top, every ON / OFF switch in a row along the bottom.
+             each mod off at zero (PWM SOURCE at OFF); PURE turns them all off.
 Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions with
 transparent radio buttons over them (tap a position or its legend; a rotary's knob also drags).
 Q-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; BENT circuit+overdrive /
-PWM + TRI / OVERDRIVE + VCF FM / LFO.
+CIRCUIT + PWM + TRI + OVERDRIVE / VCF FM / LFO.
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
@@ -71,7 +71,7 @@ CHOICES = {
     "lfo_wave": ["TRI", "SQR", "RND", "NOISE"], "range": ["16'", "8'", "4'", "2'"], "pwm_source": ["LFO", "MAN", "ENV"],
     "sub_mode": ["1 OCT", "2 OCT", "2 OCT PW"], "vca_mode": ["ENV", "GATE"], "env_trigger": ["GATE+TRIG", "GATE", "LFO"],
     "porta_mode": ["ON", "AUTO", "OFF"], "transpose": ["L", "M", "H"], "quality": ["HQ", "AUTO", "ECO"],
-    "drive_on": ["OFF", "ON"], "pwm_mod_on": ["OFF", "ON"], "pwm_mod_source": ["TRI", "SQR", "RND", "NOISE", "SUB 1", "SUB 2"],
+    "drive_on": ["OFF", "ON"], "pwm_mod_on": ["OFF", "ON"], "pwm_mod_source": ["OFF", "TRI", "SQR", "RND", "NOISE", "SUB 1", "SUB 2"],
     "fm_on": ["OFF", "ON"], "fm_source": ["PULSE", "SAW", "SUB 1", "SUB 2", "SUB PW", "NOISE"], "lfo_range": ["SLOW", "NORM", "FAST"],
     "lfo_trig": ["OFF", "ON"], "mods": ["PURE", "BENT"], "tri_on": ["OFF", "ON"], "lfo_sync": ["OFF", "ON"],
     "lfo_div": ["1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 BAR", "2 BARS", "4 BARS"],
@@ -441,7 +441,7 @@ def knob_strip(name):
 SW_W, SW_H, SW_PITCH = 34, 52, 42   # a slide switch's cap (px) and its positions' spacing (a fingertip each)
 SW_MM = 8.6                         # Lemus's switch cap width
 ROT_R = 40                          # a rotary switch's knob radius (px)
-ROT_DETENTS = {4: [-45, -15, 15, 45], 6: [-120, -72, -24, 24, 72, 120]}
+ROT_DETENTS = {4: [-45, -15, 15, 45], 6: [-120, -72, -24, 24, 72, 120], 7: [-120, -80, -40, 0, 40, 80, 120]}
 HS_PITCH, HS_LEVER = 46, 28         # a lever switch's positions' spacing and its lever's diameter (px)
 
 
@@ -808,7 +808,9 @@ class Page:
                 printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 20, 11))
             elif abs(a) > 60:   # the low positions: legends beside the knob, reading away from it
                 legend(self.p, o, lx + (8 if a > 0 else -8), ly, 10, align="l" if a > 0 else "r")
-            elif n > 4:         # the top pair: reading away from each other
+            elif n > 4 and abs(a) < 5:   # straight up: centred
+                legend(self.p, o, lx, ly - 4, 10)
+            elif n > 4:         # the upper ones: reading away from the top
                 legend(self.p, o, lx + (-8 if a > 0 else 8), ly, 10, align="l" if a > 0 else "r")
             else:
                 legend(self.p, o, lx, ly, 11)
@@ -827,6 +829,8 @@ class Page:
             if abs(a) > 60:
                 x0 = lx + 2 if a > 0 else lx - tw - 14
                 b = [x0, ly - 17, x0 + tw + 12, ly + 17]
+            elif n > 4 and abs(a) < 5:
+                b = [lx - tw / 2 - 8, ly - 21, lx + tw / 2 + 8, ly + 13]
             elif n > 4:
                 x0 = lx - 10 if a > 0 else lx - tw - 10
                 b = [x0, ly - 17, x0 + tw + 20, ly + 17]
@@ -941,14 +945,14 @@ def page_one():
         legend(p.p, cap, cx + 130, cy - 24, 11 if len(cap) > 6 else 12, fit=110)
         legend(p.p, lo, cx - 50, cy + 58, 9)
         legend(p.p, hi, cx + 50, cy + 58, 9)
-    p.caption(173, SY, "PORTAMENTO", 10)
-    p.hswitch("porta_mode", 173, SW_Y, order=[1, 2, 0], pitch=62, style="lever")   # the panel's AUTO / OFF / ON
+    p.caption(173, SY + 20, "PORTAMENTO", 10)
+    p.hswitch("porta_mode", 173, SW_Y + 20, order=[1, 2, 0], pitch=62, style="lever")   # the panel's AUTO / OFF / ON
     # BENDER: its three sliders, TRANSPOSE under them
     for key, cap, cx in [("bend_vco", "VCO", 385), ("bend_vcf", "VCF", 475), ("bend_lfo", "LFO MOD", 565)]:
         p.caption(cx, TOP - 20, cap)
         p.fader(key, cx, TOP, "orange", h=FH, numbers=(key == "bend_vco", key == "bend_lfo"))
-    p.caption(475, SY, "TRANSPOSE", 10)
-    p.hswitch("transpose", 475, SW_Y, pitch=56, style="lever")
+    p.caption(475, SY + 20, "TRANSPOSE", 10)
+    p.hswitch("transpose", 475, SW_Y + 20, pitch=56, style="lever")
     # MODULATOR: RATE, the wave switch under it
     p.caption(710, TOP - 20, "RATE")
     p.fader("lfo_rate", 710, TOP, "green", h=FH, numbers=(True, True))
@@ -961,8 +965,8 @@ def page_one():
     p.rotary("range", 920, ROT_Y)
     p.caption(1144, TOP - 20, "PW")
     p.fader("pulse_width", 1144, TOP, "orange", h=FH, numbers=(True, True))
-    p.caption(1144, SY, "PWM", 10)
-    p.hswitch("pwm_source", 1144, SW_Y, pitch=62)
+    p.caption(1030, TOP - 20, "PWM")
+    p.vswitch("pwm_source", 1012, TOP + 10, cap=11)
     p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"],
                ["lfo_rate", "lfo_wave"], ["vco_mod", "range", "pulse_width", "pwm_source"]]
     return finish(p)
@@ -1000,8 +1004,8 @@ def page_two():
     vx = (x2(4) + vca0) // 2
     p.caption(vx, SY, "QUALITY", 10)
     p.hswitch("quality", vx, SW_Y, pitch=70)
-    p.caption(vca0 + VCA_W // 2, SY, "MODE", 10)
-    p.hswitch("vca_mode", vca0 + VCA_W // 2, SW_Y, pitch=52, cap=9.5)
+    p.caption(vca0 + VCA_W // 2, TOP - 20, "MODE")
+    p.vswitch("vca_mode", vca0 + 24, TOP + 10, cap=9.5, limit=x2(9) + 2)
     ex = (x2(9) + env1) // 2
     p.caption(ex, SY, "TRIGGER", 10)
     p.hswitch("env_trigger", ex, SW_Y, pitch=96)
@@ -1009,32 +1013,22 @@ def page_two():
     return finish(p)
 
 
-BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 496), ("OVERDRIVE", 496, 616), ("VCF FM", 616, 936),
-        ("LFO", 936, 1264)]
+BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 486), ("OVERDRIVE", 486, 596), ("VCF FM", 596, 946),
+        ("LFO", 946, 1264)]
 
 
 def page_three():
-    """CIRCUIT BENT: the circuitbenders mods and two of ours (TRI VCO, LFO SYNC). Each section's controls on top, its ON / OFF
-    switch in a row along the bottom; CIRCUIT first: PURE is the stock board whatever the others say."""
+    """CIRCUIT BENT: the circuitbenders mods and two of ours (TRI VCO, LFO SYNC). Each is off at zero (PWM SOURCE at OFF);
+    CIRCUIT's PURE turns them all off at once."""
     p = Page("BENT", 2)
     header(p)
     kstrip = knob_strip("knob.png")
     sections(p.p, BENT, Y0, Y1, head=HEAD, cap=15)
     mid = lambda name: [(a + b) / 2 for t, a, b in BENT if t == name][0]
-    # the row along the bottom: CIRCUIT and each mod's ON / OFF
-    p.hswitch("mods", mid("CIRCUIT"), SW_Y, pitch=50, cap=9)
-    p.hswitch("pwm_mod_on", mid("PWM SOURCE"), SW_Y, pitch=46)
-    p.hswitch("tri_on", mid("TRI VCO"), SW_Y, pitch=46)
-    p.hswitch("drive_on", mid("OVERDRIVE"), SW_Y, pitch=46)
-    p.hswitch("fm_on", mid("VCF FM"), SW_Y, pitch=46)
-    p.caption(1018, SY, "KEY TRIG", 10)
-    p.hswitch("lfo_trig", 1018, SW_Y, pitch=46)
-    p.caption(1182, SY, "SYNC", 10)
-    p.hswitch("lfo_sync", 1182, SW_Y, pitch=46)
-    # the controls above
+    p.vswitch("mods", 42, TOP + 10, cap=10, order=[1, 0])        # BENT at the top
     c = mid("PWM SOURCE")
     p.caption(c, TOP - 20, "SOURCE")
-    p.rotary("pwm_mod_source", c, TOP + 120)
+    p.rotary("pwm_mod_source", c, TOP + 130)
     c = mid("TRI VCO")
     p.caption(c, TOP - 20, "LEVEL")
     p.fader("tri_level", c, TOP, "green", h=FH, numbers=(True, True))
@@ -1042,15 +1036,19 @@ def page_three():
     p.caption(c, TOP - 20, "DRIVE")
     p.fader("drive", c, TOP, "orange", h=FH, numbers=(True, True))
     p.caption(712, TOP - 20, "SOURCE")
-    p.rotary("fm_source", 712, TOP + 120)
-    p.caption(898, TOP - 20, "AMOUNT")
-    p.fader("fm_amount", 898, TOP, "orange", h=FH, numbers=(True, True))
+    p.rotary("fm_source", 712, TOP + 130)
+    p.caption(900, TOP - 20, "AMOUNT")
+    p.fader("fm_amount", 900, TOP, "orange", h=FH, numbers=(True, True))
     c = mid("LFO")
     p.caption(c, TOP - 20, "RANGE", 10)
     p.hswitch("lfo_range", c, TOP + 44, pitch=66)
     p.caption(c, TOP + 112, "DIV", 10)
     p.knob("lfo_div", c, TOP + 188, kstrip, ticks=9)
-    p.qrows = [["mods", "pwm_mod_source", "pwm_mod_on", "tri_level"], ["drive", "drive_on", "fm_amount", "fm_source"],
+    p.caption(1026, SY, "KEY TRIG", 10)
+    p.hswitch("lfo_trig", 1026, SW_Y, pitch=46)
+    p.caption(1182, SY, "SYNC", 10)
+    p.hswitch("lfo_sync", 1182, SW_Y, pitch=46)
+    p.qrows = [["mods", "pwm_mod_source", "tri_level", "drive"], ["fm_amount", "fm_source"],
                ["lfo_div", "lfo_range", "lfo_sync", "lfo_trig"]]
     return finish(p)
 
