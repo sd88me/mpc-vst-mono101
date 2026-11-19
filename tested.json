@@ -1,0 +1,9 @@
+[
+ {
+  "version": "0.5.0",
+  "device": "Akai MPC Live III (Gen2)",
+  "firmware": "MPC OS 3.10.1",
+  "date": "2026-11-19",
+  "note": "The release build (SDK zip from the v0.5.0 release) installed in place of the beta; loads and plays. The skin, Q-Links, presets and Circuit Bent were checked on the beta build of the same code. The Gen1 (armv7) build is not offered."
+ }
+]
