@@ -4,7 +4,8 @@
 Layout: two tabs, the panel split in two so nothing has to shrink.
     VCO      CONTROLLER (VOLUME, TUNE, PORTAMENTO knobs stacked, the portamento switch), BENDER (VCO / VCF / LFO MOD
              sliders, TRANSPOSE), MODULATOR (RATE, WAVE under it), VCO (MOD with RANGE under it, PW with PWM).
-    VCF      SOURCE MIXER (+ SUB OSC), VCF, VCA (MODE, and QUALITY in its foot), ENV (+ TRIGGER).
+    VCF      SOURCE MIXER (+ SUB OSC), VCF (+ SAVE / DELETE PRESET), VCA (MODE, and QUALITY in its foot), ENV (+ TRIGGER);
+             SAVE PRESET shows the drawn naming keyboard over the tab (kb_open).
 Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions
 with transparent radio buttons over them (tap a position or its legend).
     MODS     ALL MODS (PURE / MODDED), then the circuitbenders mods, each with its ON / OFF switch: FILTER OVERDRIVE, PWM SOURCE, VCF FM, LFO RANGE,\n             LFO TRIG (from the keys).\nQ-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; MODS one block per\nmod (LFO RANGE and TRIG together).
@@ -16,7 +17,7 @@ grain, a top-left light, soft cast shadows, recessed wells, knob highlights that
 (emboldened), the wordmark in Earth Normal: the faces of our Roland ports.
     python3 tools/make_tui.py [--preview]     # -> skins/ (build-sdk.sh runs it); --preview also writes build/skin-preview/*.png
 """
-import colorsys, json, math, os, random, shutil, sys
+import colorsys, json, math, os, random, re, shutil, sys
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -374,6 +375,8 @@ def sections(p, spans, y0, y1, head=40, cap=17):
         for y in (y0, y0 + head, y1):
             groove(p, (a, y), (b, y))
     for title, a, b in spans:
+        if not title:
+            continue
         c = cap
         while text_width(title, c) * 0.85 > b - a - 12 and c > 9:   # a narrow box takes a smaller title first
             c -= 0.5
@@ -560,12 +563,15 @@ def B(x, y, w, h):
     return "%d %d %d %d" % (x, y, w, h)
 
 
-def entry(name, typ, data, b, remap=None, focus="No"):
+def entry(name, typ, data, b, remap=None, focus="No", ind=None):
+    bd = {"version": 2 if ind else 1, "acceptsHWFocus": focus, "showWhenDataModelInvalid": "Show", "whenVisible": "Always",
+          "boundsType": "Absolute", "bounds": b}
+    if ind:   # shown only while the handle has that index (needs bounds version 2)
+        bd["additionalInvalidatingHandles"] = ind
     return {"version": 2,
             "componentData": {"version": 1, "name": name, "type": typ, "data": data},
             "handle remapping": {"version": 1, "map": [{"key": "Data", "value": remap}] if remap else []},
-            "bounds": {"version": 1, "acceptsHWFocus": focus, "showWhenDataModelInvalid": "Show", "whenVisible": "Always",
-                       "boundsType": "Absolute", "bounds": b}}
+            "bounds": bd}
 
 
 def bg(colour="0"):
@@ -621,10 +627,77 @@ def save(im, name):
 
 
 
-def label(b, remap, h=22.0, colour="ffedede8"):
+def label(b, remap, h=22.0, colour="ffedede8", just="horizontallyCentred verticallyCentred", ind=None):
     style = {"version": 1, "font": {"version": 1, "name": LABEL_FONT, "style": "SemiBold", "height": h}, "colour": colour,
-             "justification": "horizontallyCentred verticallyCentred", "case": "Original"}
-    return entry("label", "Label", {"version": 1, "textStyle": style, "type": "Value", "handleName": "Data"}, b, remap)
+             "justification": just, "case": "Original"}
+    return entry("label", "Label", {"version": 1, "textStyle": style, "type": "Value", "handleName": "Data"}, b, remap, ind=ind)
+
+
+# ---- presets: SAVE / DELETE PRESET and the naming keyboard (the plugin's kb_open shows it) ------------------------------------
+FAV_NAME_MAX = 20           # the plugin's kFavNameMax
+KB_ROWS = [("1234567890", ["kb_bksp"]), ("QWERTYUIOP", []), ("ASDFGHJKL-", []), ("ZXCVBNM", ["kb_space"])]
+
+
+def sh_key(w, h, caption, lit, cap_h=None):
+    """A key as the SH-101's buttons: a light grey cap in a dark well, its name printed dark; pressed, it sits lower."""
+    p = Painter(w, h, 0, 0, 1.0)
+    p.box([0, 0, w, h], (0x15, 0x14, 0x14), r=6)
+    p.well([0, 0, w, h], r=6, depth=2.5, alpha=0.8, lip=0)
+    dy = 1.4 if lit else 0.0
+    cap = [3.5, 3.5 + dy, w - 3.5, h - 3.5 + dy]
+    p.soft("box", cap, 0.7, 1.4, (1.0, 1.8), r=3)
+    top, bot = brighter(C["cap_light"], 0.08), darker(C["cap_light"], 0.22)
+    if lit:
+        top, bot = darker(top, 0.12), darker(bot, 0.12)
+    p.box(cap, None, r=3, grad=(top, (0, cap[1]), bot, (0, cap[3])))
+    p.box([cap[0] + 1.5, cap[1] + 0.8, cap[2] - 1.5, cap[1] + 1.8], WHITE, 0.55)
+    p.box([cap[0] + 1.5, cap[3] - 1.6, cap[2] - 1.5, cap[3] - 0.6], BLACK, 0.25)
+    cap_h = cap_h or min(h * 0.28, 12)
+    tw = text_width(caption, cap_h)
+    sx = min(1.0, (cap[2] - cap[0] - 10) / tw)
+    cx, cy = (cap[0] + cap[2]) / 2, (cap[1] + cap[3]) / 2
+    p.text(caption, [cx - tw * sx / 2, cy - cap_h / 2, cx + tw * sx / 2, cy + cap_h / 2], cap_h, (0x2a, 0x28, 0x26), sx=sx)
+    return p.result()
+
+
+def slug(k):   # exFAT is case-insensitive: one file name per key, whatever its caption
+    return re.sub(r"[^a-z0-9_]", "_", k.lower())
+
+
+def momentary(key, caption, x, y, w, h, cap_h=None, ind=None):
+    """A momentary button (the plugin drops it back to 0)."""
+    on = save(sh_key(w, h, caption, True, cap_h), slug(key) + "_on.png")
+    off = save(sh_key(w, h, caption, False, cap_h), slug(key) + "_off.png")
+    return entry(key, "Button", {"version": 2, "onImage": on, "offImage": off, "buttonId": 1, "numButtonsInGroup": 1,
+                                 "handleName": "Data", "gestureBehaviour": GESTURE}, B(x, y, w, h), P(key), ind=ind)
+
+
+def keyboard(p):
+    """The drawn keyboard for naming a preset: a full-page panel, the name, 42 keys; shown while kb_open = 1."""
+    ind = ["IndexedEnabling/1/2/%s" % P("kb_open")]
+    q = Painter(W, H, 0, 0, 1.0)
+    pc = C["panel"]
+    q.box([0, 0, W, H], None, grad=(brighter(pc, 0.06), (0, 0), darker(pc, 0.04), (0, H)))
+    sections(q, [("", 16, W - 16)], Y0, Y1, head=0)
+    legend(q, "PRESET NAME", 48, 53, 15, align="l")
+    value_well(q, 300, 26, 1210, 80)
+    legend(q, "MAX %d CHARACTERS" % FAV_NAME_MAX, 1196, 98, 8.5, colour=darker(INK, 0.2), align="r")
+    panel = save(surface(q.result(), seed=7).convert("RGB"), "kb_panel.png")
+    p.kids.append(entry("kb panel", "Image", {"version": 2, "imageType": "Regular", "colour": "0", "image": panel}, B(0, 0, W, H), ind=ind))
+    p.kids.append(label(B(316, 26, 880, 54), P("fav_name"), h=40.0, just="left verticallyCentred", ind=ind))
+    kw, kh, gap, x0, y0 = 98, 82, 8, 70, 112
+    for r, (chars, extra) in enumerate(KB_ROWS):
+        y = y0 + r * (kh + gap)
+        x = x0 + r * 30
+        for c in chars:
+            p.kids.append(momentary("kb_" + ("dash" if c == "-" else c.lower()), c, x, y, kw, kh, cap_h=20, ind=ind))
+            x += kw + gap
+        for k in extra:
+            p.kids.append(momentary(k, {"kb_bksp": "DEL", "kb_space": "SPACE"}[k], x, y, 1210 - x, kh, cap_h=17, ind=ind))
+    y = y0 + 4 * (kh + gap)
+    p.kids.append(momentary("kb_shift", "SHIFT", x0, y, 200, kh, cap_h=17, ind=ind))
+    p.kids.append(momentary("kb_cancel", "CANCEL", 640 - 130, y, 260, kh, cap_h=17, ind=ind))
+    p.kids.append(momentary("kb_save", "SAVE", 1210 - 260, y, 260, kh, cap_h=17, ind=ind))
 
 
 # ---- a tab -----------------------------------------------------------------------------------------------------------------
@@ -872,11 +945,16 @@ def page_two():
     p.vswitch("vca_mode", vca0 + 30, TOP + 10, cap=10, limit=x2(9) + 2)
     p.vswitch("quality", vca0 + 30, qy + 58, cap=10, limit=x2(9) + 2)
     vx = (x2(4) + vca0) // 2
-    wordmark(p.p, vx, sy + 70, 38)
-    legend(p.p, "MONOPHONIC SYNTHESIZER", vx, sy + 116, 10)
-    legend(p.p, "CIRCUIT MODEL BY LEMUS", vx, sy + 142, 8.5, colour=darker(INK, 0.25))
+    wordmark(p.p, vx, sy + 50, 36)
+    legend(p.p, "MONOPHONIC SYNTHESIZER", vx, sy + 92, 10)
+    legend(p.p, "CIRCUIT MODEL BY LEMUS", vx, sy + 114, 8.5, colour=darker(INK, 0.25))
+    # presets: SAVE PRESET names the sound on the drawn keyboard; DELETE PRESET empties the picked user preset
+    p.kids.append(momentary("fav_add", "SAVE PRESET", int(vx) - 186, sy + 144, 176, 52))
+    p.kids.append(momentary("fav_del", "DELETE PRESET", int(vx) + 10, sy + 144, 176, 52))
     p.qrows = [COLS2[0:4], COLS2[4:8], ["vcf_kybd", "vca_mode"], COLS2[9:13]]
-    return p, p.art()
+    art = p.art()
+    keyboard(p)   # last: over everything while it shows
+    return p, art
 
 
 MODS = [("MODS", 16, 156), ("FILTER OVERDRIVE", 156, 356), ("PWM SOURCE", 356, 596), ("VCF FM", 596, 940),
@@ -884,66 +962,63 @@ MODS = [("MODS", 16, 156), ("FILTER OVERDRIVE", 156, 356), ("PWM SOURCE", 356, 5
 
 
 def page_three():
-    """The circuitbenders SH-101 mods, each with its ON / OFF switch, and the master PURE / MODDED switch: PURE is the
-    stock board whatever the mods' own switches say."""
+    """The circuitbenders SH-101 mods, laid out as the other tabs: each mod's ON / OFF switch and its sliders on top, its
+    rotary under them; the master PURE / MODDED switch first (PURE: the stock board whatever the mods' own switches say)."""
     p = Page("MODS", 2)
-    kstrip = knob_strip("knob.png")
     sections(p.p, MODS, Y0, Y1, cap=15)
     on = [1, 0]                              # ON at the top, as a toggle
-    sw_top, knob_y = 96, 380
+    sy = TOP + FH + 54                       # the switches' row under the sliders
     dim = darker(INK, 0.2)
     # the master switch
-    p.caption(86, sw_top - 20, "ALL MODS", 10)
-    p.vswitch("mods", 40, sw_top, cap=10, order=on)
+    p.caption(86, TOP - 20, "ALL MODS", 10)
+    p.vswitch("mods", 40, TOP + 10, cap=10, order=on)
     for i, t in enumerate(["PURE: THE STOCK", "SH-101, EVERY", "MOD BYPASSED", "", "MODDED: EACH", "MOD BY ITS OWN", "SWITCH"]):
         if t:
-            legend(p.p, t, 86, 300 + i * 22, 8, colour=dim, fit=124)
-    # FILTER OVERDRIVE: ON / OFF, DRIVE
-    p.caption(210, sw_top - 20, "MOD", 10)
-    p.vswitch("drive_on", 196, sw_top, cap=11, order=on)
-    p.caption(256, knob_y - 76, "DRIVE")
-    p.knob("drive", 256, knob_y, kstrip)
-    legend(p.p, "0", 256 - 62, knob_y + 66, 9)
-    legend(p.p, "10", 256 + 62, knob_y + 66, 9)
-    legend(p.p, "MIXER INTO THE VCF, HARDER", 256, 590, 8, colour=dim, fit=186)
-    # PWM SOURCE: ON / OFF, the source
-    p.caption(410, sw_top - 20, "MOD", 10)
-    p.vswitch("pwm_mod_on", 396, sw_top, cap=11, order=on)
-    p.caption(476, knob_y - 100, "SOURCE")
-    p.rotary("pwm_mod_source", 476, knob_y)
-    legend(p.p, "FOR THE PWM SWITCH'S LFO", 476, 572, 8, colour=dim, fit=226)
-    legend(p.p, "POSITION (VCO TAB)", 476, 590, 8, colour=dim, fit=226)
-    # VCF FM: ON / OFF, AMOUNT, the source
-    p.caption(650, sw_top - 20, "MOD", 10)
-    p.vswitch("fm_on", 636, sw_top, cap=11, order=on)
-    p.caption(856, 84, "AMOUNT")
-    p.knob("fm_amount", 856, 158, kstrip)
-    legend(p.p, "0", 856 - 62, 158 + 66, 9)
-    legend(p.p, "10", 856 + 62, 158 + 66, 9)
-    p.caption(768, knob_y - 100, "SOURCE")
-    p.rotary("fm_source", 768, knob_y)
-    legend(p.p, "AUDIO-RATE CUTOFF MODULATION", 768, 590, 8, colour=dim, fit=330)
+            legend(p.p, t, 86, sy + 20 + i * 22, 8, colour=dim, fit=124)
+    # FILTER OVERDRIVE: ON / OFF, the DRIVE slider
+    p.caption(210, TOP - 20, "MOD", 10)
+    p.vswitch("drive_on", 196, TOP + 10, cap=11, order=on)
+    p.caption(302, TOP - 20, "DRIVE")
+    p.fader("drive", 302, TOP, "orange", numbers=(True, True))
+    for i, t in enumerate(["THE MIXER INTO", "THE VCF, HARDER:", "1X TO 8X"]):
+        legend(p.p, t, 256, sy + 20 + i * 22, 8, colour=dim, fit=186)
+    # PWM SOURCE: ON / OFF, the source under it
+    p.caption(410, TOP - 20, "MOD", 10)
+    p.vswitch("pwm_mod_on", 396, TOP + 10, cap=11, order=on)
+    for i, t in enumerate(["FOR THE PWM", "SWITCH'S LFO", "POSITION", "(VCO TAB)"]):
+        legend(p.p, t, 530, TOP + 10 + i * 22, 8, colour=dim, fit=110)
+    p.caption(476, sy, "SOURCE", 10)
+    p.rotary("pwm_mod_source", 476, sy + 112)
+    # VCF FM: ON / OFF, the AMOUNT slider; the source under them
+    p.caption(680, TOP - 20, "MOD", 10)
+    p.vswitch("fm_on", 666, TOP + 10, cap=11, order=on)
+    p.caption(860, TOP - 20, "AMOUNT")
+    p.fader("fm_amount", 860, TOP, "orange", numbers=(True, True))
+    p.caption(768, sy, "SOURCE", 10)
+    p.rotary("fm_source", 768, sy + 112)
     # LFO RANGE: SLOW / NORMAL / FAST, FAST at the top
-    p.caption(1021, sw_top - 20, "RANGE", 10)
-    p.vswitch("lfo_range", 990, sw_top, cap=11, order=[2, 1, 0])
+    p.caption(1021, TOP - 20, "RANGE", 10)
+    p.vswitch("lfo_range", 990, TOP + 10, cap=11, order=[2, 1, 0])
     for i, t in enumerate(["FAST: TO 550 HZ", "NORM: 12 S - 36 HZ", "SLOW: 50 S - 9 HZ"]):
-        legend(p.p, t, 1021, 300 + i * 22, 8, colour=dim, fit=150)
+        legend(p.p, t, 1021, sy + 20 + i * 22, 8, colour=dim, fit=150)
     # LFO TRIG: ON / OFF
-    p.caption(1183, sw_top - 20, "KEY TRIG", 10)
-    p.vswitch("lfo_trig", 1150, sw_top, cap=11, order=on)
+    p.caption(1183, TOP - 20, "KEY TRIG", 10)
+    p.vswitch("lfo_trig", 1150, TOP + 10, cap=11, order=on)
     for i, t in enumerate(["ON: THE LFO", "RESTARTS ON", "EACH KEY"]):
-        legend(p.p, t, 1183, 300 + i * 22, 8, colour=dim, fit=150)
-    p.qrows = [["mods", "drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_source", "fm_amount"],
+        legend(p.p, t, 1183, sy + 20 + i * 22, 8, colour=dim, fit=150)
+    p.qrows = [["mods", "drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_amount", "fm_source"],
                ["lfo_range", "lfo_trig"]]
     return p, p.art()
 
 
 # ---- preview (defaults, offline) ------------------------------------------------------------------------------------------
-def render_preview(p, art, defaults, zones=False):
+def render_preview(p, art, defaults, zones=False, keyboard_open=False):
     img = Image.open(os.path.join(OUT, art)).convert("RGBA")
     d = ImageDraw.Draw(img)
     tf = lambda px: ImageFont.truetype(os.path.join(FONTS, "TitilliumWeb-SemiBold.ttf"), int(round(px)))
     for k in p.kids:
+        if ("additionalInvalidatingHandles" in k["bounds"]) != keyboard_open:
+            continue
         cd, (x, y, w, h) = k["componentData"], [int(v) for v in k["bounds"]["bounds"].split()]
         typ, data = cd["type"], cd["data"]
         remap = k["handle remapping"]["map"]
@@ -958,9 +1033,14 @@ def render_preview(p, art, defaults, zones=False):
             n = data["numButtonsInGroup"]
             cur = int(round(spec["default"] * (n - 1)))
             img.alpha_composite(Image.open(os.path.join(OUT, data["onImage" if cur == data["buttonId"] else "offImage"])).convert("RGBA"), (x, y))
+        elif typ == "Image":
+            img.alpha_composite(Image.open(os.path.join(OUT, data["image"])).convert("RGBA"), (x, y))
         elif typ == "Label":
             st = data["textStyle"]
-            d.text((x + w / 2, y + h / 2), spec.get("display", ""), font=tf(st["font"]["height"] * DEVICE_TEXT), fill=INK, anchor="mm")
+            if keyboard_open:
+                d.text((x + 6, y + h / 2), "Acid Bass_", font=tf(st["font"]["height"] * DEVICE_TEXT), fill=INK, anchor="lm")
+            else:
+                d.text((x + w / 2, y + h / 2), spec.get("display", ""), font=tf(st["font"]["height"] * DEVICE_TEXT), fill=INK, anchor="mm")
     if zones:
         for r in p.rects:
             d.rectangle(r, outline=(232, 60, 60), width=2)
@@ -1002,6 +1082,8 @@ def main():
             img = render_preview(p, art, defaults)
             img.convert("RGB").save(os.path.join(PREVIEW, p.name.lower() + ".png"))
             render_preview(p, art, defaults, zones=True).convert("RGB").save(os.path.join(PREVIEW, p.name.lower() + "-qlinks.png"))
+            if any("additionalInvalidatingHandles" in k["bounds"] for k in p.kids):
+                render_preview(p, art, defaults, keyboard_open=True).convert("RGB").save(os.path.join(PREVIEW, p.name.lower() + "-keyboard.png"))
     print("wrote %s - %d tabs, %d files, %d KB" % (OUT, len(tabs), len(names), sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT)) // 1024))
 
 
