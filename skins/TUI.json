@@ -272,7 +272,7 @@
           }
         },
         {
-          "key": "ctl_fader_orange_284",
+          "key": "ctl_fader_orange_264",
           "value": {
             "version": 2,
             "actions": [
@@ -338,7 +338,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "WhenFocussed",
                   "boundsType": "Absolute",
-                  "bounds": "-3 -3 58 303"
+                  "bounds": "-3 -3 58 283"
                 }
               },
               {
@@ -350,7 +350,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "fader_orange_284.png",
+                    "filmStrip": "fader_orange_264.png",
                     "numFrames": 51,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -367,7 +367,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "0 0 52 297"
+                  "bounds": "0 0 52 277"
                 }
               }
             ]
@@ -476,7 +476,7 @@
           }
         },
         {
-          "key": "ctl_fader_green_284",
+          "key": "ctl_fader_green_264",
           "value": {
             "version": 2,
             "actions": [
@@ -542,7 +542,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "WhenFocussed",
                   "boundsType": "Absolute",
-                  "bounds": "-3 -3 58 303"
+                  "bounds": "-3 -3 58 283"
                 }
               },
               {
@@ -554,7 +554,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "fader_green_284.png",
+                    "filmStrip": "fader_green_264.png",
                     "numFrames": 51,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -571,7 +571,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "0 0 52 297"
+                  "bounds": "0 0 52 277"
                 }
               }
             ]
@@ -1154,7 +1154,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "WhenFocussed",
                   "boundsType": "Absolute",
-                  "bounds": "-3 -3 54 114"
+                  "bounds": "-3 -3 54 134"
                 }
               },
               {
@@ -1183,7 +1183,7 @@
                   "showWhenDataModelInvalid": "Show",
                   "whenVisible": "Always",
                   "boundsType": "Absolute",
-                  "bounds": "0 0 48 108"
+                  "bounds": "0 0 48 128"
                 }
               }
             ]
@@ -2546,7 +2546,7 @@
               "componentData": {
                 "version": 1,
                 "name": "bend_vco",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2567,7 +2567,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "363 130 52 297"
+                "bounds": "363 130 52 277"
               }
             },
             {
@@ -2609,7 +2609,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "351 430 68 26"
+                "bounds": "351 410 68 26"
               }
             },
             {
@@ -2617,7 +2617,7 @@
               "componentData": {
                 "version": 1,
                 "name": "bend_vcf",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2638,7 +2638,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "453 130 52 297"
+                "bounds": "453 130 52 277"
               }
             },
             {
@@ -2680,7 +2680,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "441 430 68 26"
+                "bounds": "441 410 68 26"
               }
             },
             {
@@ -2688,7 +2688,7 @@
               "componentData": {
                 "version": 1,
                 "name": "bend_lfo",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2709,7 +2709,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "543 130 52 297"
+                "bounds": "543 130 52 277"
               }
             },
             {
@@ -2751,7 +2751,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "531 430 68 26"
+                "bounds": "531 410 68 26"
               }
             },
             {
@@ -2890,7 +2890,7 @@
               "componentData": {
                 "version": 1,
                 "name": "lfo_rate",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2911,7 +2911,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "688 130 52 297"
+                "bounds": "688 130 52 277"
               }
             },
             {
@@ -2953,7 +2953,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "676 430 68 26"
+                "bounds": "676 410 68 26"
               }
             },
             {
@@ -3126,7 +3126,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vco_mod",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -3147,7 +3147,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "898 130 52 297"
+                "bounds": "898 130 52 277"
               }
             },
             {
@@ -3189,7 +3189,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "886 430 68 26"
+                "bounds": "886 410 68 26"
               }
             },
             {
@@ -3218,7 +3218,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "876 510 92 94"
+                "bounds": "988 510 92 94"
               }
             },
             {
@@ -3252,7 +3252,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "851 489 39 34"
+                "bounds": "963 489 39 34"
               }
             },
             {
@@ -3286,7 +3286,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "891 472 29 34"
+                "bounds": "1003 472 29 34"
               }
             },
             {
@@ -3320,7 +3320,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "920 472 32 34"
+                "bounds": "1032 472 32 34"
               }
             },
             {
@@ -3354,7 +3354,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "952 489 32 34"
+                "bounds": "1064 489 32 34"
               }
             },
             {
@@ -3362,7 +3362,7 @@
               "componentData": {
                 "version": 1,
                 "name": "pulse_width",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -3383,7 +3383,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1122 130 52 297"
+                "bounds": "1122 130 52 277"
               }
             },
             {
@@ -3425,7 +3425,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1110 430 68 26"
+                "bounds": "1110 410 68 26"
               }
             },
             {
@@ -5193,7 +5193,7 @@
           "28 92 248 480",
           "349 128 252 444",
           "646 128 127 476",
-          "851 128 328 476"
+          "884 128 296 476"
         ]
       },
       {
@@ -5319,7 +5319,7 @@
               "componentData": {
                 "version": 1,
                 "name": "pulse_level",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5340,7 +5340,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "38 130 52 297"
+                "bounds": "38 130 52 277"
               }
             },
             {
@@ -5382,7 +5382,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "26 430 68 26"
+                "bounds": "26 410 68 26"
               }
             },
             {
@@ -5390,7 +5390,7 @@
               "componentData": {
                 "version": 1,
                 "name": "saw_level",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5411,7 +5411,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "126 130 52 297"
+                "bounds": "126 130 52 277"
               }
             },
             {
@@ -5453,7 +5453,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "114 430 68 26"
+                "bounds": "114 410 68 26"
               }
             },
             {
@@ -5461,7 +5461,7 @@
               "componentData": {
                 "version": 1,
                 "name": "sub_level",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5482,7 +5482,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "214 130 52 297"
+                "bounds": "214 130 52 277"
               }
             },
             {
@@ -5524,7 +5524,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "202 430 68 26"
+                "bounds": "202 410 68 26"
               }
             },
             {
@@ -5532,7 +5532,7 @@
               "componentData": {
                 "version": 1,
                 "name": "noise_level",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5553,7 +5553,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "302 130 52 297"
+                "bounds": "302 130 52 277"
               }
             },
             {
@@ -5595,7 +5595,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "290 430 68 26"
+                "bounds": "290 410 68 26"
               }
             },
             {
@@ -5603,7 +5603,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vcf_freq",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5624,7 +5624,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "390 130 52 297"
+                "bounds": "390 130 52 277"
               }
             },
             {
@@ -5666,7 +5666,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "378 430 68 26"
+                "bounds": "378 410 68 26"
               }
             },
             {
@@ -5674,7 +5674,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vcf_res",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5695,7 +5695,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "478 130 52 297"
+                "bounds": "478 130 52 277"
               }
             },
             {
@@ -5737,7 +5737,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "466 430 68 26"
+                "bounds": "466 410 68 26"
               }
             },
             {
@@ -5745,7 +5745,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vcf_env",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5766,7 +5766,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "566 130 52 297"
+                "bounds": "566 130 52 277"
               }
             },
             {
@@ -5808,7 +5808,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "554 430 68 26"
+                "bounds": "554 410 68 26"
               }
             },
             {
@@ -5816,7 +5816,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vcf_mod",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5837,7 +5837,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "654 130 52 297"
+                "bounds": "654 130 52 277"
               }
             },
             {
@@ -5879,7 +5879,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "642 430 68 26"
+                "bounds": "642 410 68 26"
               }
             },
             {
@@ -5887,7 +5887,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vcf_kybd",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5908,7 +5908,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "742 130 52 297"
+                "bounds": "742 130 52 277"
               }
             },
             {
@@ -5950,7 +5950,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "730 430 68 26"
+                "bounds": "730 410 68 26"
               }
             },
             {
@@ -5958,7 +5958,7 @@
               "componentData": {
                 "version": 1,
                 "name": "attack",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5979,7 +5979,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "934 130 52 297"
+                "bounds": "934 130 52 277"
               }
             },
             {
@@ -6021,7 +6021,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "922 430 68 26"
+                "bounds": "922 410 68 26"
               }
             },
             {
@@ -6029,7 +6029,7 @@
               "componentData": {
                 "version": 1,
                 "name": "decay",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -6050,7 +6050,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1022 130 52 297"
+                "bounds": "1022 130 52 277"
               }
             },
             {
@@ -6092,7 +6092,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1010 430 68 26"
+                "bounds": "1010 410 68 26"
               }
             },
             {
@@ -6100,7 +6100,7 @@
               "componentData": {
                 "version": 1,
                 "name": "sustain",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -6121,7 +6121,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1110 130 52 297"
+                "bounds": "1110 130 52 277"
               }
             },
             {
@@ -6163,7 +6163,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1098 430 68 26"
+                "bounds": "1098 410 68 26"
               }
             },
             {
@@ -6171,7 +6171,7 @@
               "componentData": {
                 "version": 1,
                 "name": "release",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -6192,7 +6192,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1198 130 52 297"
+                "bounds": "1198 130 52 277"
               }
             },
             {
@@ -6234,7 +6234,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1186 430 68 26"
+                "bounds": "1186 410 68 26"
               }
             },
             {
@@ -6263,7 +6263,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "70 508 248 48"
+                "bounds": "70 525 248 48"
               }
             },
             {
@@ -6297,7 +6297,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "54 484 92 68"
+                "bounds": "54 501 92 68"
               }
             },
             {
@@ -6331,7 +6331,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "146 484 92 68"
+                "bounds": "146 501 92 68"
               }
             },
             {
@@ -6365,7 +6365,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "238 484 92 68"
+                "bounds": "238 501 92 68"
               }
             },
             {
@@ -6394,7 +6394,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "488 508 204 48"
+                "bounds": "488 525 204 48"
               }
             },
             {
@@ -6428,7 +6428,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "483 484 70 68"
+                "bounds": "483 501 70 68"
               }
             },
             {
@@ -6462,7 +6462,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "553 484 70 68"
+                "bounds": "553 501 70 68"
               }
             },
             {
@@ -6496,7 +6496,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "623 484 70 68"
+                "bounds": "623 501 70 68"
               }
             },
             {
@@ -6525,7 +6525,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "811 140 48 108"
+                "bounds": "811 140 48 128"
               }
             },
             {
@@ -6559,7 +6559,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "809 149 104 42"
+                "bounds": "809 139 104 62"
               }
             },
             {
@@ -6593,7 +6593,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "809 191 104 42"
+                "bounds": "809 201 104 62"
               }
             },
             {
@@ -6622,7 +6622,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "962 508 256 48"
+                "bounds": "962 525 256 48"
               }
             },
             {
@@ -6656,7 +6656,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "944 484 96 68"
+                "bounds": "944 501 96 68"
               }
             },
             {
@@ -6690,7 +6690,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1040 484 96 68"
+                "bounds": "1040 501 96 68"
               }
             },
             {
@@ -6724,7 +6724,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1136 484 96 68"
+                "bounds": "1136 501 96 68"
               }
             },
             {
@@ -8358,10 +8358,10 @@
           ]
         },
         "qlinkBoundsData": [
-          "24 128 336 332",
-          "376 128 336 332",
-          "728 128 184 332",
-          "920 128 336 332"
+          "24 128 336 312",
+          "376 128 336 312",
+          "728 128 184 312",
+          "920 128 336 312"
         ]
       },
       {
@@ -8851,7 +8851,7 @@
               "componentData": {
                 "version": 1,
                 "name": "tri_level",
-                "type": "ctl_fader_green_284",
+                "type": "ctl_fader_green_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -8872,7 +8872,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "409 130 52 297"
+                "bounds": "424 130 52 277"
               }
             },
             {
@@ -8914,7 +8914,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "397 430 68 26"
+                "bounds": "412 410 68 26"
               }
             },
             {
@@ -8922,7 +8922,7 @@
               "componentData": {
                 "version": 1,
                 "name": "drive",
-                "type": "ctl_fader_orange_284",
+                "type": "ctl_fader_orange_264",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -8943,7 +8943,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "519 130 52 297"
+                "bounds": "564 130 52 277"
               }
             },
             {
@@ -8985,7 +8985,78 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "507 430 68 26"
+                "bounds": "552 410 68 26"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_amount",
+                "type": "ctl_fader_orange_264",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 37"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "759 130 52 277"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "label",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "SemiBold",
+                      "height": 24.0
+                    },
+                    "colour": "ffedede8",
+                    "justification": "horizontallyCentred verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Value",
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 37"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "747 410 68 26"
               }
             },
             {
@@ -9014,7 +9085,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "668 220 92 94"
+                "bounds": "737 510 92 94"
               }
             },
             {
@@ -9048,7 +9119,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "585 280 68 34"
+                "bounds": "654 570 68 34"
               }
             },
             {
@@ -9082,7 +9153,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "593 227 54 34"
+                "bounds": "662 517 54 34"
               }
             },
             {
@@ -9116,7 +9187,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "623 187 72 34"
+                "bounds": "692 477 72 34"
               }
             },
             {
@@ -9150,7 +9221,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "729 187 72 34"
+                "bounds": "798 477 72 34"
               }
             },
             {
@@ -9184,7 +9255,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "777 227 83 34"
+                "bounds": "846 517 83 34"
               }
             },
             {
@@ -9218,78 +9289,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "771 280 65 34"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_amount",
-                "type": "ctl_fader_orange_284",
-                "data": {
-                  "version": 1,
-                  "handleName": "Data"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 37"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "Yes",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "878 130 52 297"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "label",
-                "type": "Label",
-                "data": {
-                  "version": 1,
-                  "textStyle": {
-                    "version": 1,
-                    "font": {
-                      "version": 1,
-                      "name": "Titillium Web",
-                      "style": "SemiBold",
-                      "height": 24.0
-                    },
-                    "colour": "ffedede8",
-                    "justification": "horizontallyCentred verticallyCentred",
-                    "case": "Original"
-                  },
-                  "type": "Value",
-                  "handleName": "Data"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 37"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "866 430 68 26"
+                "bounds": "840 570 65 34"
               }
             },
             {
@@ -9318,7 +9318,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1009 156 196 48"
+                "bounds": "989 156 196 48"
               }
             },
             {
@@ -9352,7 +9352,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1006 132 66 68"
+                "bounds": "986 132 66 68"
               }
             },
             {
@@ -9386,7 +9386,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1072 132 66 68"
+                "bounds": "1052 132 66 68"
               }
             },
             {
@@ -9420,7 +9420,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1138 132 66 68"
+                "bounds": "1118 132 66 68"
               }
             },
             {
@@ -9449,7 +9449,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1049 266 124 124"
+                "bounds": "1029 266 124 124"
               }
             },
             {
@@ -9491,7 +9491,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1055 414 100 27"
+                "bounds": "1035 414 100 27"
               }
             },
             {
@@ -9520,7 +9520,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "973 508 110 48"
+                "bounds": "944 508 110 48"
               }
             },
             {
@@ -9554,7 +9554,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "980 484 46 68"
+                "bounds": "951 484 46 68"
               }
             },
             {
@@ -9588,7 +9588,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1026 484 46 68"
+                "bounds": "997 484 46 68"
               }
             },
             {
@@ -9617,7 +9617,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1129 508 110 48"
+                "bounds": "1120 508 110 48"
               }
             },
             {
@@ -9651,7 +9651,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1136 484 46 68"
+                "bounds": "1127 484 46 68"
               }
             },
             {
@@ -9685,7 +9685,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1182 484 46 68"
+                "bounds": "1173 484 46 68"
               }
             },
             {
@@ -11319,9 +11319,9 @@
           ]
         },
         "qlinkBoundsData": [
-          "19 128 558 332",
-          "584 128 351 332",
-          "980 132 248 420"
+          "19 128 603 312",
+          "653 128 274 476",
+          "951 132 268 420"
         ]
       }
     ]

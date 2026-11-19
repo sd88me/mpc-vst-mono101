@@ -772,13 +772,13 @@ class Page:
     def strip(self, key, name, b, frames):
         self.kids.append(entry(key, strip_def(name, b[2], b[3], frames), {"version": 1, "handleName": "Data"}, B(*b), P(key), focus="Yes"))
 
-    def vswitch(self, key, cx, top, cap=9.5, limit=None, order=None):
+    def vswitch(self, key, cx, top, cap=9.5, limit=None, order=None, pitch=SW_PITCH):
         """A slide switch as on the panel: a black cap with a yellow line in a recessed slot, position 0 at the top; the
         legends to its right. Each row (cap and legend) is a tap target."""
         opts = CHOICES[key]
         n = len(opts)
         order = order or list(range(n))   # which choice each position (top to bottom) is
-        ys = [top + SW_H / 2 + i * SW_PITCH for i in range(n)]
+        ys = [top + SW_H / 2 + i * pitch for i in range(n)]
         bot = ys[-1] + SW_H / 2
         well(self.p, [cx - SW_W / 2 - 4, top - 4, cx + SW_W / 2 + 4, bot + 4], darker(C["panel"], 0.06), r=1.5, depth=2.5, alpha=0.65, lip=0.32)
         well(self.p, [cx - 4, ys[0] - 6, cx + 4, ys[-1] + 6], C["slot_black"], r=2, depth=3.0, alpha=0.9, lip=0.18)
@@ -792,7 +792,7 @@ class Page:
         name = film("sw_%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[order.index(f)] / m, SW_MM - 0.4, SW_H / m))
         self.strip(key, name, b, n)
         x0 = cx - SW_W / 2 - 6
-        self.zones(key, [(x0, y - SW_PITCH / 2, right - x0, SW_PITCH) for y in ys], ids=order)
+        self.zones(key, [(x0, y - pitch / 2, right - x0, pitch) for y in ys], ids=order)
 
     def rotary(self, key, cx, cy, glyphs=False):
         """A rotary switch as on the panel (WAVE, RANGE): a small black knob with detent ticks and the legends round its
@@ -906,8 +906,8 @@ HEADER = 58                  # the top strip: the wordmark, the preset buttons
 Y0, Y1 = HEADER + 4, H - 8   # the section boxes
 HEAD = 34                    # a section's title strip
 TOP = Y0 + HEAD + 38         # faders' top (their names 20 above)
-FH = 284                     # their travel picture here
-SY = TOP + FH + 52           # the row under the faders: its names; the switches' levers at SY + 60, rotaries at SY + 84
+FH = 264                     # their travel picture here
+SY = TOP + 284 + 52           # the row under the faders (fixed: shorter faders leave room above it): its names; the switches' levers at SY + 60, rotaries at SY + 84
 SW_Y, ROT_Y = SY + 60, SY + 84
 
 
@@ -961,8 +961,8 @@ def page_one():
     # VCO: MOD with RANGE under it, PW with PWM under it
     p.caption(920, TOP - 20, "MOD")
     p.fader("vco_mod", 920, TOP, "orange", h=FH, numbers=(True, True))
-    p.caption(920, SY, "RANGE", 10)
-    p.rotary("range", 920, ROT_Y)
+    p.caption(1032, SY, "RANGE", 10)
+    p.rotary("range", 1032, ROT_Y)
     p.caption(1144, TOP - 20, "PW")
     p.fader("pulse_width", 1144, TOP, "orange", h=FH, numbers=(True, True))
     p.caption(1030, TOP - 20, "PWM")
@@ -998,23 +998,27 @@ def page_two():
         cx = x2(i) + PITCH2 // 2
         p.caption(cx, TOP - 20, CAPS[key])
         p.fader(key, cx, TOP, "green" if i < 4 else "orange", h=FH, numbers=(i == sec, i == last))
+    # the switches and their names centred in the space under the faders' values
+    free0, free1 = TOP + FH + 38, Y1
+    sw_y = (free0 + free1) / 2 + 19
+    cap_y = sw_y - 58
     mx = (x2(0) + x2(4)) // 2
-    p.caption(mx, SY, "SUB OSC", 10)
-    p.hswitch("sub_mode", mx, SW_Y, pitch=92)
+    p.caption(mx, cap_y, "SUB OSC", 10)
+    p.hswitch("sub_mode", mx, sw_y, pitch=92)
     vx = (x2(4) + vca0) // 2
-    p.caption(vx, SY, "QUALITY", 10)
-    p.hswitch("quality", vx, SW_Y, pitch=70)
+    p.caption(vx, cap_y, "QUALITY", 10)
+    p.hswitch("quality", vx, sw_y, pitch=70)
     p.caption(vca0 + VCA_W // 2, TOP - 20, "MODE")
-    p.vswitch("vca_mode", vca0 + 24, TOP + 10, cap=9.5, limit=x2(9) + 2)
+    p.vswitch("vca_mode", vca0 + 24, TOP + 10, cap=9.5, limit=x2(9) + 2, pitch=62)
     ex = (x2(9) + env1) // 2
-    p.caption(ex, SY, "TRIGGER", 10)
-    p.hswitch("env_trigger", ex, SW_Y, pitch=96)
+    p.caption(ex, cap_y, "TRIGGER", 10)
+    p.hswitch("env_trigger", ex, sw_y, pitch=96)
     p.qrows = [COLS2[0:4], COLS2[4:8], ["vcf_kybd", "vca_mode"], COLS2[9:13]]
     return finish(p)
 
 
-BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 486), ("OVERDRIVE", 486, 596), ("VCF FM", 596, 946),
-        ("LFO", 946, 1264)]
+BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 516), ("OVERDRIVE", 516, 656), ("VCF FM", 656, 906),
+        ("LFO", 906, 1264)]
 
 
 def page_three():
@@ -1035,19 +1039,20 @@ def page_three():
     c = mid("OVERDRIVE")
     p.caption(c, TOP - 20, "DRIVE")
     p.fader("drive", c, TOP, "orange", h=FH, numbers=(True, True))
-    p.caption(712, TOP - 20, "SOURCE")
-    p.rotary("fm_source", 712, TOP + 130)
-    p.caption(900, TOP - 20, "AMOUNT")
-    p.fader("fm_amount", 900, TOP, "orange", h=FH, numbers=(True, True))
+    c = mid("VCF FM")              # AMOUNT on top, SOURCE under it
+    p.caption(c, TOP - 20, "AMOUNT")
+    p.fader("fm_amount", c, TOP, "orange", h=FH, numbers=(True, True))
+    p.caption(c, SY, "SOURCE", 10)
+    p.rotary("fm_source", c, ROT_Y)
     c = mid("LFO")
     p.caption(c, TOP - 20, "RANGE", 10)
     p.hswitch("lfo_range", c, TOP + 44, pitch=66)
     p.caption(c, TOP + 112, "DIV", 10)
     p.knob("lfo_div", c, TOP + 188, kstrip, ticks=9)
-    p.caption(1026, SY, "KEY TRIG", 10)
-    p.hswitch("lfo_trig", 1026, SW_Y, pitch=46)
-    p.caption(1182, SY, "SYNC", 10)
-    p.hswitch("lfo_sync", 1182, SW_Y, pitch=46)
+    p.caption(c - 88, SY, "KEY TRIG", 10)
+    p.hswitch("lfo_trig", c - 88, SW_Y, pitch=46)
+    p.caption(c + 88, SY, "SYNC", 10)
+    p.hswitch("lfo_sync", c + 88, SW_Y, pitch=46)
     p.qrows = [["mods", "pwm_mod_source", "tri_level", "drive"], ["fm_amount", "fm_source"],
                ["lfo_div", "lfo_range", "lfo_sync", "lfo_trig"]]
     return finish(p)
