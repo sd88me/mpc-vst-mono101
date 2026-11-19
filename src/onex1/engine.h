@@ -66,7 +66,13 @@ public:
 		m_voice.setControls(m_controls);
 		m_lfo.setRate(m_controls.lfoRate);
 		m_lfo.setWave(m_controls.lfoWave);
-		m_lfo.setRateScale(m_controls.mods.lfoRateScale);
+		if (m_syncBeats > 0) { // LFO SYNC: whatever RATE says, the LFO runs at one cycle per division
+			m_lfo.setRateScale(1);
+			const double h = m_lfo.hz();
+			// Lfo::hz() reads 0.82 % slow against the simulated circuit at every rate and wave (measured): corrected
+			m_lfo.setRateScale(h > 0 ? m_bpm / 60.0 / m_syncBeats / (h * 1.0082) : 1.0);
+		} else
+			m_lfo.setRateScale(m_controls.mods.lfoRateScale);
 		applyPerformance();
 		int e = 0, done = 0;
 		for (int i = 0; i < n; ++i) {
@@ -80,6 +86,14 @@ public:
 				}
 				applyPerformance();
 			}
+			if (m_syncBeats > 0 && m_syncLock) { // a new division of the song position: restart the LFO (a CLK RST)
+				const long long c = (long long)std::floor((m_ppq + i * m_ppqStep) / m_syncBeats + 1e-9);
+				if (c != m_syncCycle) {
+					m_lfo.reset();
+					m_syncCycle = c;
+				}
+			} else
+				m_syncCycle = -1LL << 62;
 			const auto lfo = m_lfo.tick();
 			m_mod[size_t(i)] = {lfo.tri, lfo.square};
 			// RANDOM: the firmware puts a new random code on S/H channel 2 at each MODULATOR clock
@@ -110,6 +124,17 @@ public:
 			renderVoice(out + done, n - done, m_mod.data() + done);
 	}
 
+	// 1x1: LFO SYNC. beats > 0: one LFO cycle per that many beats at bpm; lock: the host plays, ppq is the song position at
+	// the block's start. 0 beats: free running. Call before render().
+	void setSync(double beats, double bpm, bool lock, double ppq, double rate)
+	{
+		m_syncBeats = beats;
+		m_bpm = bpm;
+		m_syncLock = lock;
+		m_ppq = ppq;
+		m_ppqStep = rate > 0 ? bpm / 60.0 / rate : 0;
+	}
+
 	bool asleep() const { return m_asleep; }
 	sh101::Voice::Probe probe() const { return m_voice.probe(); }
 
@@ -128,6 +153,9 @@ private:
 	unsigned m_rng = 0x2545f491u;
 	int m_random = 0;
 	int m_quietSamples = 0;
+	double m_syncBeats = 0, m_bpm = 120, m_ppq = 0, m_ppqStep = 0;
+	bool m_syncLock = false;
+	long long m_syncCycle = -1LL << 62;
 	sh101::Voice::Probe m_quietFrom;
 
 	// Returns true if the bender or MOD changed (the voice is split there, as Lemus does).

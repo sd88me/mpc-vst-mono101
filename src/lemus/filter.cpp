@@ -320,7 +320,7 @@ double FilterSection::tick(const OscFrame &osc)
 	// The source mixer as one Thevenin source.
 	double g = 0, gv = 0;
 	for (const auto &src : osc.mix) {
-		if (src.ohms <= 0)
+		if (src.ohms <= 0 || src.ohms >= 1e12) // 1x1: not connected
 			continue;
 		g += 1 / src.ohms;
 		gv += src.volts / src.ohms;

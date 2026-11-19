@@ -86,6 +86,7 @@ struct OscSection::Impl {
 	double pulseV[2] = {kVref, kVref}, rPulse = kR110;
 	double subV[4] = {kVref, kVref, kVref, kVref}, rSub = kR112; // by q1 + 2 q2
 	double gNoise = 0, rNoise = kR109;
+	double gTri = 0, rTri = kR111;           // 1x1: the TRI VCO mod's level pot, wired as the saw's
 	Thevenin tune;
 	double kVcoMod = 0;
 
@@ -123,6 +124,9 @@ struct OscSection::Impl {
 		const double k16 = taperB(c.noiseLevel);
 		gNoise = k16;
 		rNoise = kR109 + k16 * (1 - k16) * kRpot;
+		const double kt = taperB(c.mods.triLevel);
+		gTri = kt;
+		rTri = kR111 + kt * (1 - kt) * kRpot;
 		// TUNE: VR9 100k (B) from the bus to ground; clockwise moves the wiper to ground (sharp).
 		tune = potWiper(kVref, 0, 0, kRpot, 1 - std::clamp(c.tune, 0.0, 1.0));
 		kVcoMod = taperA(c.vcoMod);
@@ -300,6 +304,12 @@ OscFrame OscSection::tick(const ModFrame &mod, double envVolts)
 	f.mix[1] = {s.pulseBlep.push(s.pulseV[s.vco.pulseHigh() ? 1 : 0]), s.rPulse};
 	f.mix[2] = {s.subBlep.push(s.subV[s.subState]), s.rSub};
 	f.mix[3] = {kVref + s.gNoise * (noise - kVref), s.rNoise};
+	// 1x1: TRI VCO. The CEM3340's triangle (the SH-101 leaves it unused), 0-10 V like the saw, from the same core's phase:
+	// continuous, so no band-limiting step is needed.
+	if (s.c.mods.triLevel > 0) {
+		const double tri = 10 * (1 - std::fabs(2 * s.vco.phase() - 1));
+		f.mix[4] = {kVref + s.gTri * (tri - kVref), s.rTri};
+	}
 	f.modVolts = modAbs - kVref;
 	f.kybdVolts = s.cv;
 	f.lfoSquare = mod.square;

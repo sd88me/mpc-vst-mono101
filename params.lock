@@ -85,3 +85,7 @@ kb_bksp
 kb_shift
 kb_cancel
 kb_save
+tri_on
+tri_level
+lfo_sync
+lfo_div

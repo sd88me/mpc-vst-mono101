@@ -93,7 +93,7 @@ inline void mixSum(const OscFrame &o, double &v, double &r)
 {
 	double g = 0, gv = 0;
 	for (const auto &src : o.mix) {
-		if (src.ohms <= 0)
+		if (src.ohms <= 0 || src.ohms >= 1e12) // 1x1: not connected
 			continue;
 		g += 1 / src.ohms;
 		gv += src.volts / src.ohms;

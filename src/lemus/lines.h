@@ -38,10 +38,11 @@ struct Mods {
 	double fmAmount = 0;                             // VCF FM amount, travel 0..1
 	double lfoRateScale = 1;                         // LFO RATE range: x slow / x fast
 	bool lfoTrig = false;                            // LFO restarts on each key
+	double triLevel = 0;                             // TRI VCO: the CEM3340's triangle into the mixer, travel 0..1 (0 = off)
 	bool operator==(const Mods &o) const
 	{
 		return drive == o.drive && pwmSource == o.pwmSource && fmSource == o.fmSource && fmAmount == o.fmAmount &&
-		       lfoRateScale == o.lfoRateScale && lfoTrig == o.lfoTrig;
+		       lfoRateScale == o.lfoRateScale && lfoTrig == o.lfoTrig && triLevel == o.triLevel;
 	}
 };
 

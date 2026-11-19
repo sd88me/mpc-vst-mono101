@@ -40,7 +40,8 @@ struct OscFrame {
 		double ohms = 1e12;
 	};
 	// Volts are absolute (to ground), as at the slider wipers; C45 takes out the DC.
-	Source mix[4];
+	// 1x1: a fifth, the TRI VCO mod's triangle; a source left at 1e12 ohms is not connected (and not summed).
+	Source mix[5];
 	// The MODULATOR waveform the switch selects: IC18a's output, which feeds the VCO MOD and VCF
 	// MOD sliders, relative to the +5 V bus (the sliders' other end).
 	double modVolts = 0;

@@ -84,8 +84,7 @@ enum ParamIndex {
 	kLfoRange,
 	kLfoTrig,
 	kModsMaster, // PURE: every mod bypassed, whatever its own switch says
-	kNumSynth,   // the sound's parameters end here; the presets' controls follow (kLocal: never reach the engine)
-	kFavAdd = kNumSynth,
+	kFavAdd,     // the presets' controls (local: never reach the engine) from here to kLocalEnd
 	kFavDel,
 	kFavName,    // the name being typed: a counter the plugin bumps; its text is the name
 	kKbOpen,     // the drawn keyboard is showing (set by the plugin only)
@@ -94,7 +93,19 @@ enum ParamIndex {
 
 constexpr char kKbChars[] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM-";
 constexpr int kKbCount = int(sizeof kKbChars - 1) + 5;
-constexpr int kNumParams = kKbFirst + kKbCount;
+constexpr int kLocalEnd = kKbFirst + kKbCount;
+// appended after the keyboard (params.lock is append only): more of the sound's parameters
+enum ParamIndex2 {
+	kTriOn = kLocalEnd, // CIRCUIT BENT: TRI VCO
+	kTriLevel,
+	kLfoSync,           // CIRCUIT BENT: LFO SYNC to the host tempo
+	kLfoDiv,
+	kNumParamsE
+};
+constexpr int kNumParams = kNumParamsE;
+constexpr bool isSynth(int i) { return i < kFavAdd || (i >= kLocalEnd && i < kNumParams); }
+// LFO SYNC's divisions, in beats per LFO cycle
+constexpr double kLfoDivBeats[] = {0.25, 1.0 / 3, 0.5, 2.0 / 3, 1, 2, 4, 8, 16};
 constexpr int kFavSlots = 32, kFavNameMax = 20; // the MPC shows 24 characters of a program name; "U01 " takes 4
 constexpr int kNumFactory = 1 + onex1::kNumFactoryPresets; // Init, the manual's 40, Mono-101's own
 
@@ -183,7 +194,7 @@ public:
 		slider("fm_amount", "VCF FM Amount", 0.3f);
 		addParam(mpc::choiceParam("lfo_range", "LFO Range Mod", {"Slow", "Normal", "Fast"}, 1));
 		addParam(mpc::choiceParam("lfo_trig", "LFO Key Trig Mod", {"Off", "On"}, 0));
-		addParam(mpc::choiceParam("mods", "Mods", {"Pure", "Modded"}, 1));
+		addParam(mpc::choiceParam("mods", "Circuit Bent", {"Pure", "Bent"}, 1));
 		auto local = [this](mpc::Param p) {
 			p.automatable = false;
 			addParam(p);
@@ -207,12 +218,16 @@ public:
 			}
 			local(mpc::intParam(ids[k].c_str(), names[k].c_str(), 0, 1, 0));
 		}
+		addParam(mpc::choiceParam("tri_on", "Tri VCO Mod", {"Off", "On"}, 0));
+		slider("tri_level", "Tri VCO Level", 0.7f);
+		addParam(mpc::choiceParam("lfo_sync", "LFO Sync Mod", {"Off", "On"}, 0));
+		addParam(mpc::choiceParam("lfo_div", "LFO Sync Division", {"1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 Bar", "2 Bars", "4 Bars"}, 4));
 		addProgram("Init", {});
 		for (int i = 0; i < onex1::kNumFactoryPresets; ++i)
 			addProgram(onex1::kFactoryPresets[i].name, {});
 		for (int i = 0; i < kFavSlots; ++i)
 			addProgram("", {});
-		for (int i = 0; i < kNumSynth; ++i)
+		for (int i = 0; i < kNumParams; ++i)
 			defaults_.push_back(get(i));
 		for (int i = 0; i < onex1::kNumFactoryPresets; ++i) {
 			std::vector<float> v = defaults_;
@@ -235,7 +250,7 @@ public:
 	// ---- presets ------------------------------------------------------------------------------------------------------------
 	void parameterChanged(int index, float plain) override
 	{
-		if (index < kNumSynth || index >= kNumParams || t_pushing == index)
+		if (index < 0 || index >= kNumParams || isSynth(index) || t_pushing == index)
 			return;
 		localChanged(index, plain);
 	}
@@ -248,7 +263,7 @@ public:
 			out = kbName_ + "_";
 			return true;
 		}
-		if (index >= kNumSynth && index != kKbOpen) {
+		if (!isSynth(index) && index != kKbOpen) {
 			out = "";
 			return true;
 		}
@@ -345,6 +360,11 @@ public:
 		e.setControls(controls());
 		e.range = sh101::Range(getInt(kRange));
 		e.transpose = sh101::Transpose(getInt(kTranspose));
+		// LFO SYNC: the rate from the host's tempo; while it plays, the LFO restarts on each division of the song position
+		const mpc::Transport &t = ctx.transport;
+		const bool sync = getInt(kModsMaster) && getInt(kLfoSync) && t.tempoValid && t.bpm > 0;
+		e.setSync(sync ? kLfoDivBeats[std::min(std::max(getInt(kLfoDiv), 0), 8)] : 0.0, t.bpm, t.playing && t.ppqValid,
+		          t.ppqPos, ctx.sampleRate > 0 ? ctx.sampleRate : rate_);
 
 		int nev = 0;
 		for (int i = 0; i < ctx.numMidiEvents && nev < kMaxEvents; ++i) {
@@ -426,6 +446,7 @@ private:
 		m.fmAmount = s(kFmAmount);
 		m.lfoRateScale = kLfoScale[getInt(kLfoRange)];
 		m.lfoTrig = getInt(kLfoTrig) != 0;
+		m.triLevel = getInt(kTriOn) ? s(kTriLevel) : 0.0;
 		return c;
 	}
 
@@ -433,15 +454,15 @@ private:
 	struct Fav {
 		bool used = false;
 		std::string name;
-		std::vector<float> values; // kNumSynth plain values
+		std::vector<float> values; // kNumParams plain values (only the sound's are used)
 	};
 
-	static bool inPreset(int i) { return i < kNumSynth && i != kQuality; }
+	static bool inPreset(int i) { return isSynth(i) && i != kQuality; }
 
 	// Set the sound's values without calling parameterChanged; process() reads them, the worker tells the host.
 	void applyValues(const std::vector<float> &v)
 	{
-		for (int i = 0; i < kNumSynth && i < int(v.size()); ++i)
+		for (int i = 0; i < kNumParams && i < int(v.size()); ++i)
 			if (inPreset(i))
 				values_[size_t(i)]->store(param(i).toNormalised(v[size_t(i)]), std::memory_order_relaxed);
 		tellAll_.store(true);
@@ -466,13 +487,15 @@ private:
 	void tickOnce()
 	{
 		const long long now = nowMs();
-		for (int i = kNumSynth; i < kNumParams; ++i)
+		for (int i = kFavAdd; i < kLocalEnd; ++i)
 			if (release_[i].exchange(false)) {
 				held_[i].store(false);
 				pushValue(i, 0.0f);
 			}
 		if (tellAll_.exchange(false)) { // a program pick: every setting moved
-			for (int i = 0; i < kNumSynth; ++i) {
+			for (int i = 0; i < kNumParams; ++i) {
+				if (!isSynth(i))
+					continue;
 				t_pushing = i;
 				notifyHostParameterChanged(i);
 				t_pushing = -1;
@@ -546,7 +569,7 @@ private:
 				continue;
 			ok = ok && std::fprintf(f, "%d\t%s\t", s + 1, snap[size_t(s)].name.c_str()) > 0;
 			bool first = true;
-			for (int i = 0; i < kNumSynth; ++i) {
+			for (int i = 0; i < kNumParams; ++i) {
 				if (!inPreset(i))
 					continue;
 				ok = ok && std::fprintf(f, "%s%s=%.6g", first ? "" : " ", param(i).id.c_str(), double(snap[size_t(s)].values[size_t(i)])) > 0;
@@ -570,8 +593,8 @@ private:
 			if (!eq)
 				continue;
 			*eq = 0;
-			for (int i = 0; i < kNumSynth; ++i)
-				if (!std::strcmp(tok, param(i).id.c_str())) {
+			for (int i = 0; i < kNumParams; ++i)
+				if (isSynth(i) && !std::strcmp(tok, param(i).id.c_str())) {
 					const float x = float(std::atof(eq + 1));
 					v[size_t(i)] = std::min(std::max(x, param(i).min), param(i).max);
 				}
@@ -661,7 +684,7 @@ private:
 		}
 		if (index == kFavAdd) { // open the keyboard on the preset's name; the sound is taken now
 			std::vector<float> vals;
-			for (int i = 0; i < kNumSynth; ++i)
+			for (int i = 0; i < kNumParams; ++i)
 				vals.push_back(get(i));
 			std::string name = currentName();
 			if (name.size() > size_t(kFavNameMax))
