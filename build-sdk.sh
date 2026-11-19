@@ -19,6 +19,7 @@ if ids[:len(lock)] != lock:
 if len(ids) > len(lock):
     sys.exit("params.lock: new parameters %s: append them to params.lock" % ids[len(lock):])
 PY
+python3 "$here/tools/make_tui.py"
 if [ "${1:-}" = beta ]; then
   stage="$here/build/beta-project"; rm -rf "$stage"; mkdir -p "$stage"
   ln -s "$here/src" "$stage/src"; [ -d "$here/skins" ] && ln -s "$here/skins" "$stage/skins"
@@ -28,10 +29,10 @@ m = json.load(open(sys.argv[1]))
 m.update(name="Mono-101 Beta", uid="M10B", file32="VST/mono101beta-arm32.so", file64="VST/mono101beta-arm64.so")
 json.dump(m, open(sys.argv[2], "w"), indent=2)
 PY
-  python3 "$SDK/tools/build.py" "$stage" --define 'ONEX1_NAME="Mono-101 Beta"' --define "ONEX1_UID='M','1','0','B'"
+  python3 "$SDK/tools/build.py" "$stage" --no-ui --define 'ONEX1_NAME="Mono-101 Beta"' --define "ONEX1_UID='M','1','0','B'"
   exit
 fi
-python3 "$SDK/tools/build.py" "$here"
+python3 "$SDK/tools/build.py" "$here" --no-ui
 if [ "${1:-}" = test ]; then
   "$SDK/.sdk-tools/host_sim" "$here/build/native/mono-101.so" test --notes 48,55,60 --wav "$here/build/test.wav"
 fi
