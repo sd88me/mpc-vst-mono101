@@ -9,6 +9,7 @@
 #include <complex>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <ctime>
 #include <functional>
 #include <memory>
@@ -111,6 +112,14 @@ static std::vector<float> render(const Workload &w, Timing *tm = nullptr)
 		e->render(out.data() + p, n, be.data(), int(be.size()));
 		if (tm)
 			blocks.push_back((threadSeconds() - b0) / (n / kRate));
+		if (getenv("VTEST_BLOCKS") && tm) {
+			const auto st = e->probe().solver;
+			static long lastRetried = 0;
+			if (p == 0)
+				lastRetried = st.retried;
+			static long lastIt = 0, lastSolves = 0; printf("%s %.4f %.1f %ld %.2f\n", w.name, p / kRate, 100 * blocks.back(), st.retried - lastRetried, double(st.iterations - lastIt) / std::max(1L, st.solves - lastSolves)); lastIt = st.iterations; lastSolves = st.solves;
+			lastRetried = st.retried;
+		}
 	}
 	if (tm) {
 		tm->mean = (threadSeconds() - t0) / w.seconds;

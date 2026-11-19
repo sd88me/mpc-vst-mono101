@@ -97,7 +97,7 @@ void EnvGen::setControls(double attack, double decay, double sustain, double rel
 		double vbe = 0.56, ib = 0;
 		for (int k = 0; k < 4; ++k) {
 			ib = (vo16 - vbe - tNode0) / kR159 - vbe / kR165;
-			vbe = kVt * std::log(std::max(ib, 1e-9) / (kIs * (1.0 / kBeta + 1.0 / (1 + kBetaR))));
+			vbe = kVt * fastLog(std::max(ib, 1e-9) / (kIs * (1.0 / kBeta + 1.0 / (1 + kBetaR))));
 		}
 		m_ib35 = std::max(ib, 0.0);
 		m_i159 = std::max((vo16 - vbe - tNode0) / kR159, 0.0);
@@ -164,7 +164,7 @@ double EnvGen::tick(bool gate, double kcvVolts, bool lfoSquare)
 		m_attack = false;
 		const double tNode0 = m_vs - m_vbe37;
 		const double ib = m_ib35;
-		const double veb36 = kVt * std::log((m_i159 + std::max(m_i, 0.0)) / kIs + 1);
+		const double veb36 = kVt * fastLog((m_i159 + std::max(m_i, 0.0)) / kIs + 1);
 		const double target = tNode0 + veb36 + vce;
 		const double v0 = m_v;
 		double v = target + (m_v - target) * m_kDecay;

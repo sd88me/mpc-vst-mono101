@@ -215,7 +215,7 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 	if (iAbc != m_kIabc) {
 		m_kIabc = iAbc;
 		const double rp = 1 / g2, cap = p.c + p.capPinF;
-		const double lnI = std::log(std::max(iAbc, 1e-18));
+		const double lnI = fastLog(std::max(iAbc, 1e-18));
 		const double gain = otaGainLn(lnI);
 		double pw[4];
 		for (int i = 0; i < 4; ++i) {
@@ -224,7 +224,7 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 				pw[2] = pw[0];
 			} else {
 				const double wT2 = m_buf[i] * gain * iAbc * rp / (twoVt * kR68 * cap) * h2;
-				pw[i] = wT2 > 1e-6 ? std::tan(std::min(wT2, 1.4)) / std::min(wT2, 1.4) : 1.0;
+				pw[i] = wT2 > 1e-6 ? fastTanOverX(std::min(wT2, 1.4)) : 1.0;
 			}
 			m_kStage[i] = kIdeal * gain * pw[i];
 			// The output resistance: g_m / (g_m r_o) from CAP towards its rest, on the same integrator
@@ -346,7 +346,7 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 		if (std::abs(d) > 3 * nvt) {
 			const double idNew = id + did * dx[4];
 			if (idNew * id > 0)
-				dx[4] = nvt * std::asinh(idNew / (2 * p.diodeIs)) - d;
+				dx[4] = nvt * fastAsinh(idNew / (2 * p.diodeIs)) - d;
 		}
 		// TR27's junction the same way (it always conducts): its V_BE (c - e, c following C4) steps to
 		// where its linearised current says. Otherwise an iterate that overdrives it creeps back less
@@ -357,7 +357,7 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 			if (std::abs(dvbe) > 0.25 * p.vt) {
 				const double ieNew = ie + die * dvbe;
 				if (ieNew > 0)
-					dx[5] = dc - p.vt * std::log(ieNew / ie);
+					dx[5] = dc - p.vt * fastLog(ieNew / ie);
 			}
 		}
 		bool limited = std::abs(dx[4]) > 0.3 || std::abs(x[4] + dx[4]) > dMax || std::abs(dx[5]) > 0.5;
@@ -377,8 +377,8 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 				const double xn = x[i] + dx[i], kn = p.vt * 0.6931471805599453;
 				if (std::abs(dx[i]) > 2 * p.vt &&
 				    (std::min(x[i], xn) < m_x0Lo + kn || std::max(x[i], xn) > m_x0Hi - kn)) {
-					const double lo = m_x0Lo + p.vt * std::log(std::max(1 + tq[i], 1e-30));
-					const double hi = m_x0Hi - p.vt * std::log(std::max(1 - tq[i], 1e-30));
+					const double lo = m_x0Lo + p.vt * fastLog(std::max(1 + tq[i], 1e-30));
+					const double hi = m_x0Hi - p.vt * fastLog(std::max(1 - tq[i], 1e-30));
 					if ((x[i] - lo) * (xn - lo) < 0)
 						dx[i] = lo - x[i];
 					else if ((x[i] - hi) * (xn - hi) < 0)
@@ -471,8 +471,10 @@ bool Ir3109Vcf::solveSample(double iAbc, double a, double vm, double gmix)
 	double f0[4];
 	std::copy(m_f, m_f + 4, f0);
 	const double v45 = m_v45, v52 = m_v52;
-	if (solve(iAbc, a, vm, gmix))
+	if (solve(iAbc, a, vm, gmix)) {
+		m_stats.iterations += m_iters;
 		return true;
+	}
 	++m_stats.retried;
 	double x0[6], xPrev0[6];
 	std::copy(m_xPrev, m_xPrev + 6, x0);
@@ -502,6 +504,7 @@ bool Ir3109Vcf::solveSample(double iAbc, double a, double vm, double gmix)
 	std::copy(x0, x0 + 6, m_xPrev);
 	std::copy(xPrev0, xPrev0 + 6, m_xPrev2);
 	m_iters = iters;
+	m_stats.iterations += iters;
 	if (!ok)
 		++m_stats.failures;
 	return ok;

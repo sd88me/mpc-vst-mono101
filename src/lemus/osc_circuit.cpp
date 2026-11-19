@@ -254,7 +254,7 @@ double Cem3340::current(double vCv, double vRange, double vIc12b, double lastIde
 // ---------------------------------------------------------------------------------------------
 // PWM
 
-double PwmNetwork::vbe(double ie) { return kVT * std::log(std::max(ie, 1e-12) / 3.3e-14 + 1); } // 2SC1815: IS 33 fA (0.62 V at 1 mA)
+double PwmNetwork::vbe(double ie) { return kVT * fastLog(std::max(ie, 1e-12) / 3.3e-14 + 1); } // 2SC1815: IS 33 fA (0.62 V at 1 mA)
 
 double PwmNetwork::pin5(PwmSource src, double slider, double triVolts, double envVolts)
 {
@@ -537,7 +537,7 @@ void Vco::addEdge(double frac, Edge::Kind k)
 
 namespace {
 // 1S2473 (1N4148 class): IS 2.52 nA, N 1.752.
-double diodeDrop(double i) { return 1.752 * kVT * std::log(std::max(i, 1e-15) / 2.52e-9 + 1); }
+double diodeDrop(double i) { return 1.752 * kVT * fastLog(std::max(i, 1e-15) / 2.52e-9 + 1); }
 
 Thevenin orStage(int nHigh)
 {

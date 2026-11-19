@@ -255,7 +255,7 @@ struct FilterSection::Impl {
 			return expoOut;
 		const double q = fastExp(lnI0Knee - v9rel / vExpo);
 		expoIn = v9rel;
-		expoOut = kneeN == 3 ? kneeAmps * q / std::cbrt(1 + q * q * q)
+		expoOut = kneeN == 3 ? kneeAmps * q / fastCbrt(1 + q * q * q)
 		                     : kneeAmps * q / std::pow(1 + std::pow(q, kneeN), 1 / kneeN);
 		return expoOut;
 	}

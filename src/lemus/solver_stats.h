@@ -10,11 +10,13 @@ namespace sh101 {
 // range it once turned the self-oscillation into white noise (docs/improvements.md, 2026-11-16).
 struct SolverStats {
 	long solves = 0, retried = 0, failures = 0;
+	long iterations = 0; // 1x1: Newton iterations, retries included (the VCF's)
 	SolverStats &operator+=(const SolverStats &o)
 	{
 		solves += o.solves;
 		retried += o.retried;
 		failures += o.failures;
+		iterations += o.iterations;
 		return *this;
 	}
 };
