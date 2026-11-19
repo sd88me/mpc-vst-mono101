@@ -190,7 +190,7 @@ public:
 		addParam(mpc::choiceParam("pwm_mod_on", "PWM Source Mod", {"Off", "On"}, 0));
 		addParam(mpc::choiceParam("pwm_mod_source", "PWM Source", {"Off", "Triangle", "Square", "Random", "Noise", "Sub 1 Oct", "Sub 2 Oct"}, 0));
 		addParam(mpc::choiceParam("fm_on", "VCF FM Mod", {"Off", "On"}, 0));
-		addParam(mpc::choiceParam("fm_source", "VCF FM Source", {"Pulse", "Saw", "Sub 1 Oct", "Sub 2 Oct", "Sub 2 Oct Pulse", "Noise"}, 0));
+		addParam(mpc::choiceParam("fm_source", "VCF FM Source", {"Pulse", "Saw", "Tri", "Sub 1 Oct", "Sub 2 Oct Pulse", "Noise"}, 0));
 		slider("fm_amount", "VCF FM Amount", 0.0f);
 		addParam(mpc::choiceParam("lfo_range", "LFO Range Mod", {"Slow", "Normal", "Fast"}, 1));
 		addParam(mpc::choiceParam("lfo_trig", "LFO Key Trig Mod", {"Off", "On"}, 0));

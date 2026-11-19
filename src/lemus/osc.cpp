@@ -323,8 +323,8 @@ OscFrame OscSection::tick(const ModFrame &mod, double envVolts)
 		case ModFmSource::Off: break;
 		case ModFmSource::Pulse: v = s.vco.pulseHigh() ? 5 : -5; break;
 		case ModFmSource::Saw: v = saw - 5; break;
+		case ModFmSource::Tri: v = 5 - 10 * std::fabs(2 * s.vco.phase() - 1); break; // the CEM3340's triangle
 		case ModFmSource::Sub1: v = s.vco.q1() ? 5 : -5; break;
-		case ModFmSource::Sub2: v = s.vco.q2() ? 5 : -5; break;
 		case ModFmSource::Sub2Pulse: v = (s.vco.q1() && s.vco.q2()) ? 5 : -5; break;
 		case ModFmSource::Noise: v = std::clamp(noise - kVref, -5.0, 5.0); break;
 		}

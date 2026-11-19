@@ -2017,8 +2017,8 @@
         "value": [
           "PULSE",
           "SAW",
+          "TRI",
           "SUB 1",
-          "SUB 2",
           "SUB PW",
           "NOISE"
         ]
@@ -9187,7 +9187,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "697 477 72 34"
+                "bounds": "722 477 47 34"
               }
             },
             {

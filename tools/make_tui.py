@@ -72,7 +72,7 @@ CHOICES = {
     "sub_mode": ["1 OCT", "2 OCT", "2 OCT PW"], "vca_mode": ["ENV", "GATE"], "env_trigger": ["GATE+TRIG", "GATE", "LFO"],
     "porta_mode": ["ON", "AUTO", "OFF"], "transpose": ["L", "M", "H"], "quality": ["HQ", "AUTO", "ECO"],
     "drive_on": ["OFF", "ON"], "pwm_mod_on": ["OFF", "ON"], "pwm_mod_source": ["OFF", "TRI", "SQR", "RND", "NOISE", "SUB 1", "SUB 2"],
-    "fm_on": ["OFF", "ON"], "fm_source": ["PULSE", "SAW", "SUB 1", "SUB 2", "SUB PW", "NOISE"], "lfo_range": ["SLOW", "NORM", "FAST"],
+    "fm_on": ["OFF", "ON"], "fm_source": ["PULSE", "SAW", "TRI", "SUB 1", "SUB PW", "NOISE"], "lfo_range": ["SLOW", "NORM", "FAST"],
     "lfo_trig": ["OFF", "ON"], "mods": ["PURE", "BENT"], "tri_on": ["OFF", "ON"], "lfo_sync": ["OFF", "ON"],
     "lfo_div": ["1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 BAR", "2 BARS", "4 BARS"],
 }

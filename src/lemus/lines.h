@@ -30,7 +30,7 @@ enum class PortaMode : uint8_t { On, Auto, Off };
 // default, so the stock board is what plays. The jacks (audio in, VCF CV in, LFO trigger in) are not
 // modelled: the LFO trigger is taken from the keyboard instead.
 enum class ModPwmSource : int8_t { Stock = -1, Triangle, Square, Random, Noise, Sub1, Sub2 };
-enum class ModFmSource : int8_t { Off = -1, Pulse, Saw, Sub1, Sub2, Sub2Pulse, Noise };
+enum class ModFmSource : int8_t { Off = -1, Pulse, Saw, Tri, Sub1, Sub2Pulse, Noise };
 struct Mods {
 	double drive = 1;                                // FILTER OVERDRIVE: the mixer's signal into the VCF x drive
 	ModPwmSource pwmSource = ModPwmSource::Stock;    // PWM SOURCE for the PWM switch's LFO position
