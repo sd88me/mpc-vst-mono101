@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace onex1 {
@@ -93,7 +94,7 @@ public:
 					m_syncCycle = c;
 				}
 			} else
-				m_syncCycle = -1LL << 62;
+				m_syncCycle = kNoCycle;
 			const auto lfo = m_lfo.tick();
 			m_mod[size_t(i)] = {lfo.tri, lfo.square};
 			// RANDOM: the firmware puts a new random code on S/H channel 2 at each MODULATOR clock
@@ -155,7 +156,8 @@ private:
 	int m_quietSamples = 0;
 	double m_syncBeats = 0, m_bpm = 120, m_ppq = 0, m_ppqStep = 0;
 	bool m_syncLock = false;
-	long long m_syncCycle = -1LL << 62;
+	static constexpr long long kNoCycle = std::numeric_limits<long long>::min(); // no division seen yet
+	long long m_syncCycle = kNoCycle;
 	sh101::Voice::Probe m_quietFrom;
 
 	// Returns true if the bender or MOD changed (the voice is split there, as Lemus does).

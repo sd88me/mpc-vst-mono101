@@ -347,7 +347,7 @@ public:
 
 	void process(mpc::ProcessContext &ctx) override
 	{
-		DenormalGuard guard;
+		[[maybe_unused]] DenormalGuard guard; // does nothing off aarch64
 		const int n = ctx.numFrames;
 		if (n > int(mono_.size()))
 			return; // the host promised maxBlockSize; never allocate here
