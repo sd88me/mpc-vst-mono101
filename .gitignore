@@ -1,0 +1,4 @@
+tools/voicetest/vtest
+tools/voicetest/vtest-arm32
+tools/voicetest/vtest-arm64
+build/
