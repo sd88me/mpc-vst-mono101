@@ -52,6 +52,15 @@ Findings:
   in the OTAs: real behaviour, no simple prewarp fix. Note starts differ by up to 1 dB in the first frame (the
   mixer half-band's 65 us against the ENV).
 
+## Plugin (2026-11-19)
+`src/OneX1Plugin.cpp` (SDK `mpc::Plugin`), 31 parameters frozen in `params.lock` (the panel's 30 + QUALITY), plugin.json
+uid `S1x1`, beta `1x1 Beta` / `S1xB` (`./build-sdk.sh beta`). `./build-sdk.sh test`: host_sim 19 passed. Skin: the SDK's
+generated default for now. Beta copied to the Live III's /nvme/VST2 Plugins (acvs not restarted yet).
+Extras over Lemus's voice mode: RANDOM steps on each MODULATOR clock (the firmware's job), QUALITY.
+
+Plugin next: native skin (the panel's sliders as faders, drawn from code), Q-Links, +FAV favourites with the naming
+keyboard, Lemus's SH-01A MIDI CC map, Live III fast-core pinning, CPU check inside MPC.
+
 ## Next
 1. Force numbers (armhf `vtest-arm32`; FORCE unreachable today). Expect well over 100% of a core, as the 303 was.
 2. Speed work, one commit per step, `vtest check golden` after each (target: the 303's HQ/ECO budget,
