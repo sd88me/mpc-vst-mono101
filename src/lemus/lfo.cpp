@@ -36,6 +36,8 @@ void Lfo::setRate(double knob)
 
 void Lfo::setWave(LfoWave w) { m_vh = ModSwitch::thresholdHigh(w); }
 
+void Lfo::setRateScale(double k) { m_scale = k; }
+
 void Lfo::setClkRst(bool active) { m_rstLevel = active; }
 
 void Lfo::reset() { m_rstTimer = kLoopSec; }
@@ -52,7 +54,7 @@ void Lfo::update()
 
 double Lfo::hz() const
 {
-	const double i = m_k * (kHigh - kVref) / m_rIn;
+	const double i = m_scale * m_k * (kHigh - kVref) / m_rIn;
 	return i / (2 * kC9 * (m_vh - ModSwitch::thresholdLow()));
 }
 
@@ -65,7 +67,7 @@ Lfo::Out Lfo::tick()
 		m_v = std::max(m_v, kLow + 0.5); // IC3a's output limit
 		// The integrator inverts: the square high drives the triangle down.
 		const double vsq = m_high ? kHigh : kLow;
-		double slope = -m_k * (vsq - kVref) / m_rIn / kC9;
+		double slope = -m_scale * m_k * (vsq - kVref) / m_rIn / kC9;
 		if (rst)
 			slope -= (kBase4 + (m_high ? kFast : 0)) / kC9;
 		if (m_high) {

@@ -29,3 +29,12 @@ bend_vcf
 bend_lfo
 transpose
 quality
+drive_on
+drive
+pwm_mod_on
+pwm_mod_source
+fm_on
+fm_source
+fm_amount
+lfo_range
+lfo_trig

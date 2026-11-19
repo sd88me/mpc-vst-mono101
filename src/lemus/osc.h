@@ -51,6 +51,8 @@ struct OscFrame {
 	// The bender board's two outputs to the VCF summer, as Thevenin sources relative to the bus:
 	// VCF BEND (VR5's wiper, to R185) and VCF LFO (the grip's LFO MOD through VR6, to R184).
 	Source vcfBend, vcfLfo;
+	// 1x1: the VCF FM mod's source after its AMOUNT pot, against the bus, into the summer.
+	Source vcfFm;
 };
 
 // The synth board from the S/H outputs to the source mixer: portamento and the pitch summer

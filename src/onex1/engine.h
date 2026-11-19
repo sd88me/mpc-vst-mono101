@@ -66,6 +66,7 @@ public:
 		m_voice.setControls(m_controls);
 		m_lfo.setRate(m_controls.lfoRate);
 		m_lfo.setWave(m_controls.lfoWave);
+		m_lfo.setRateScale(m_controls.mods.lfoRateScale);
 		applyPerformance();
 		int e = 0, done = 0;
 		for (int i = 0; i < n; ++i) {
@@ -135,6 +136,8 @@ private:
 		const int st = b[0] & 0xf0;
 		if (st == 0x90 && b[2] > 0) {
 			m_keys.noteOn(b[1], m_controls.trigger);
+			if (m_controls.mods.lfoTrig) // the LFO TRIG mod, from the keyboard: a CLK RST on each key
+				m_lfo.reset();
 		} else if (st == 0x80 || st == 0x90) {
 			m_keys.noteOff(b[1]);
 		} else if (st == 0xb0) {
@@ -203,7 +206,7 @@ private:
 		       a.vcaMode == b.vcaMode && a.attack == b.attack && a.decay == b.decay && a.sustain == b.sustain &&
 		       a.release == b.release && a.trigger == b.trigger && a.volume == b.volume && a.tune == b.tune &&
 		       a.portamento == b.portamento && a.portaMode == b.portaMode && a.bendVco == b.bendVco &&
-		       a.bendVcf == b.bendVcf && a.lfoModDepth == b.lfoModDepth;
+		       a.bendVcf == b.bendVcf && a.lfoModDepth == b.lfoModDepth && a.mods == b.mods;
 	}
 };
 

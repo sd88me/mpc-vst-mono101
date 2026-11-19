@@ -227,6 +227,9 @@ struct FilterSection::Impl {
 		// through VR6 into R184, each a Thevenin source against the bus.
 		i += osc.vcfBend.volts / (kR185 + osc.vcfBend.ohms);
 		i += osc.vcfLfo.volts / (kR184 + osc.vcfLfo.ohms);
+		// 1x1: the VCF FM mod's input, 100k like the MOD slider's R191.
+		if (osc.vcfFm.volts != 0)
+			i += osc.vcfFm.volts / (kR191 + osc.vcfFm.ohms);
 		// IR9022 on 0/+14 V: its output stays 2 V from either rail.
 		return std::clamp(-kR192 * i, 2.0 - kVref, kV14 - 2.0 - kVref);
 	}
@@ -336,6 +339,10 @@ double FilterSection::tick(const OscFrame &osc, double mixVolts, double mixR)
 	s.v9Lp += (s.v9 - s.v9Lp) * s.kSlew;
 	s.iAbcVcf = s.expoCurrent(s.v9Lp);
 
+	// 1x1: FILTER OVERDRIVE. The mixer's signal (its swing about the bus, which C45 passes) into
+	// the IR3109's first stage, multiplied: the OTAs' tanh does the rest.
+	if (s.c.mods.drive != 1)
+		mixVolts = kVref + (mixVolts - kVref) * s.c.mods.drive;
 	const double mixV = mixVolts + s.circuitNoise();
 	const double vin = s.vcf.tick(s.iAbcVcf, s.c.vcfRes, mixV, mixR);
 

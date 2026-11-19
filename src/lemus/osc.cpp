@@ -260,7 +260,20 @@ OscFrame OscSection::tick(const ModFrame &mod, double envVolts)
 	s.hz = std::min(ideal / (1 + s.cem.tDelay * ideal), std::min(kFmax, 0.45 * s.rate));
 
 	// PWM: pin 5 through C37; the SH-101 pulse is high above phase pin5 / (100 % voltage).
-	s.pin5 += (s.pwm.pin5(s.c.pwmSource, s.c.pulseWidth, tri, envVolts) - s.pin5) * s.pin5K;
+	// 1x1: the PWM SOURCE mod hangs another wave on the PWM switch's LFO position, in the
+	// triangle's swing (about -4.9..+5.3 V about the bus); the sub-oscillator's flip-flops as they
+	// stood at the last sample.
+	double pwmIn = tri;
+	switch (s.c.mods.pwmSource) {
+	case ModPwmSource::Stock:
+	case ModPwmSource::Triangle: break;
+	case ModPwmSource::Square: pwmIn = kVref + (mod.square ? 5.3 : -4.9); break;
+	case ModPwmSource::Random: pwmIn = kVref - 4.9 + 10.2 * (s.lines.random / 63.0); break;
+	case ModPwmSource::Noise: pwmIn = std::clamp(kVref + 2.5 * (modNoise - kVref), kVref - 4.9, kVref + 5.3); break;
+	case ModPwmSource::Sub1: pwmIn = kVref + ((s.subState & 1) ? 5.3 : -4.9); break;
+	case ModPwmSource::Sub2: pwmIn = kVref + ((s.subState & 2) ? 5.3 : -4.9); break;
+	}
+	s.pin5 += (s.pwm.pin5(s.c.pwmSource, s.c.pulseWidth, pwmIn, envVolts) - s.pin5) * s.pin5K;
 	s.vco.tick(s.hz, s.pin5 / s.cal.pwFullVolts);
 
 	// Band-limited edges, then the naive values of this sample.
@@ -292,6 +305,22 @@ OscFrame OscSection::tick(const ModFrame &mod, double envVolts)
 	f.lfoSquare = mod.square;
 	f.vcfBend = {b.vcfBend.v - kVref, b.vcfBend.r};
 	f.vcfLfo = {b.vcfLfo.v - kVref, b.vcfLfo.r};
+	// 1x1: VCF FM. The source as a +-5 V swing about the bus, through a 100k A AMOUNT pot (wiper
+	// to the summer's input resistor, the filter section's).
+	if (s.c.mods.fmSource != ModFmSource::Off) {
+		double v = 0;
+		switch (s.c.mods.fmSource) {
+		case ModFmSource::Off: break;
+		case ModFmSource::Pulse: v = s.vco.pulseHigh() ? 5 : -5; break;
+		case ModFmSource::Saw: v = saw - 5; break;
+		case ModFmSource::Sub1: v = s.vco.q1() ? 5 : -5; break;
+		case ModFmSource::Sub2: v = s.vco.q2() ? 5 : -5; break;
+		case ModFmSource::Sub2Pulse: v = (s.vco.q1() && s.vco.q2()) ? 5 : -5; break;
+		case ModFmSource::Noise: v = std::clamp(noise - kVref, -5.0, 5.0); break;
+		}
+		const double k = taperA(s.c.mods.fmAmount);
+		f.vcfFm = {v * k, k * (1 - k) * kRpot};
+	}
 	return f;
 }
 

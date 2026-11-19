@@ -20,6 +20,7 @@ public:
 	void prepare(double rate);
 	void setRate(double knob); // RATE slider travel 0..1
 	void setWave(LfoWave w);   // the waveform switch: it moves the Schmitt's upper threshold
+	void setRateScale(double k); // 1x1: the LFO RATE range mod (C9 switched): the RATE current x k
 	// CLK RST, the P24 line itself (active = low on the CPU). Prefer this to reset().
 	void setClkRst(bool active);
 	void reset();              // a CLK RST of one CPU loop (1.5 ms), for callers that see only its start
@@ -31,6 +32,7 @@ public:
 private:
 	double m_dt = 1 / 44100.0;
 	double m_knob = 0.5;
+	double m_scale = 1;         // 1x1
 	double m_k = 0, m_rIn = 120e3;  // the RATE divider's ratio and the integrator's input resistance
 	double m_vh = 10.3;             // the node's high level (upper threshold)
 	double m_v = 5.2;               // C9: IC3a's output, absolute volts

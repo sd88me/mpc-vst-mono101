@@ -26,6 +26,25 @@ enum class SubMode : uint8_t { Oct1Square, Oct2Square, Oct2Pulse };
 enum class VcaMode : uint8_t { Env, Gate };
 enum class PortaMode : uint8_t { On, Auto, Off };
 
+// 1x1: the circuitbenders SH-101 mods (circuitbenders.co.uk/synthmod/SH101.html), each off by
+// default, so the stock board is what plays. The jacks (audio in, VCF CV in, LFO trigger in) are not
+// modelled: the LFO trigger is taken from the keyboard instead.
+enum class ModPwmSource : int8_t { Stock = -1, Triangle, Square, Random, Noise, Sub1, Sub2 };
+enum class ModFmSource : int8_t { Off = -1, Pulse, Saw, Sub1, Sub2, Sub2Pulse, Noise };
+struct Mods {
+	double drive = 1;                                // FILTER OVERDRIVE: the mixer's signal into the VCF x drive
+	ModPwmSource pwmSource = ModPwmSource::Stock;    // PWM SOURCE for the PWM switch's LFO position
+	ModFmSource fmSource = ModFmSource::Off;         // VCF FM source into the cutoff summer
+	double fmAmount = 0;                             // VCF FM amount, travel 0..1
+	double lfoRateScale = 1;                         // LFO RATE range: x slow / x fast
+	bool lfoTrig = false;                            // LFO restarts on each key
+	bool operator==(const Mods &o) const
+	{
+		return drive == o.drive && pwmSource == o.pwmSource && fmSource == o.fmSource && fmAmount == o.fmAmount &&
+		       lfoRateScale == o.lfoRateScale && lfoTrig == o.lfoTrig;
+	}
+};
+
 // The synth board's front-panel controls. Sliders and knobs are travel 0 (bottom / fully
 // anticlockwise) to 1, as the panel scales print 0-10; the taper is the voice's business.
 struct Controls {
@@ -64,6 +83,7 @@ struct Controls {
 	double bendVco = 0.5;      // bender sensitivity sliders
 	double bendVcf = 0;
 	double lfoModDepth = 0.5;  // bender MOD: LFO depth when the lever is pushed
+	Mods mods;                 // 1x1
 };
 
 // Performance controls that are not panel settings: the bender lever and its push.

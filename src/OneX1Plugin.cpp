@@ -57,6 +57,16 @@ enum ParamIndex {
 	kBendLfo,
 	kTranspose,
 	kQuality,
+	// The circuitbenders mods (MODS tab), each with its own switch; off = the stock board.
+	kDriveOn,
+	kDrive,
+	kPwmModOn,
+	kPwmModSource,
+	kFmOn,
+	kFmSource,
+	kFmAmount,
+	kLfoRange,
+	kLfoTrig,
 	kNumParams
 };
 
@@ -72,6 +82,7 @@ constexpr bool kGen1 =
 #endif
 
 constexpr int kMaxEvents = 512;
+constexpr double kLfoScale[3] = {0.25, 1.0, 15.0}; // LFO RANGE mod: SLOW (50 s-9 Hz), NORMAL (12.5 s-36 Hz), FAST (to 550 Hz)
 
 // Flush denormals to zero while rendering on aarch64 (Gen1's NEON does it by itself; without it
 // the 303's sweeps spiked past 3000 % on a Live III).
@@ -128,6 +139,15 @@ public:
 		slider("bend_lfo", "Bend LFO", 0.5f);
 		addParam(mpc::choiceParam("transpose", "Transpose", {"L", "M", "H"}, 1));
 		addParam(mpc::choiceParam("quality", "Quality", {"HQ", "Auto", "ECO"}, 1));
+		addParam(mpc::choiceParam("drive_on", "Overdrive Mod", {"Off", "On"}, 0));
+		slider("drive", "Overdrive", 0.5f);
+		addParam(mpc::choiceParam("pwm_mod_on", "PWM Source Mod", {"Off", "On"}, 0));
+		addParam(mpc::choiceParam("pwm_mod_source", "PWM Source", {"Triangle", "Square", "Random", "Noise", "Sub 1 Oct", "Sub 2 Oct"}, 1));
+		addParam(mpc::choiceParam("fm_on", "VCF FM Mod", {"Off", "On"}, 0));
+		addParam(mpc::choiceParam("fm_source", "VCF FM Source", {"Pulse", "Saw", "Sub 1 Oct", "Sub 2 Oct", "Sub 2 Oct Pulse", "Noise"}, 0));
+		slider("fm_amount", "VCF FM Amount", 0.3f);
+		addParam(mpc::choiceParam("lfo_range", "LFO Range Mod", {"Slow", "Normal", "Fast"}, 1));
+		addParam(mpc::choiceParam("lfo_trig", "LFO Key Trig Mod", {"Off", "On"}, 0));
 	}
 
 	void prepare(double sampleRate, int maxBlockSize) override
@@ -237,6 +257,14 @@ private:
 		c.bendVco = s(kBendVco);
 		c.bendVcf = s(kBendVcf);
 		c.lfoModDepth = s(kBendLfo);
+		// The mods: overdrive 1x..8x, the LFO's C9 switched (kLfoScale).
+		auto &m = c.mods;
+		m.drive = getInt(kDriveOn) ? 1.0 + 7.0 * s(kDrive) : 1.0;
+		m.pwmSource = getInt(kPwmModOn) ? sh101::ModPwmSource(getInt(kPwmModSource)) : sh101::ModPwmSource::Stock;
+		m.fmSource = getInt(kFmOn) ? sh101::ModFmSource(getInt(kFmSource)) : sh101::ModFmSource::Off;
+		m.fmAmount = s(kFmAmount);
+		m.lfoRateScale = kLfoScale[getInt(kLfoRange)];
+		m.lfoTrig = getInt(kLfoTrig) != 0;
 		return c;
 	}
 
