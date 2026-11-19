@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Mono-101's native MPC skin: skins/TUI.json + skins/Q-Links.json + the PNGs they use.
 
-Layout: two tabs.
-    PANEL    the synth board's sections as on the instrument: MODULATOR, VCO, SOURCE MIXER, VCF, VCA, ENV. Sixteen faders
-             (Knob film strips dragged vertically) with their values under them, the switches as the panel's
-             slide and rotary switches (film strips; tap a position or its legend).
-    CONTROL  VOLUME, TUNE, PORTAMENTO (+ mode), the bender's VCO / VCF / LFO MOD sliders, TRANSPOSE, QUALITY.
-Q-Links: PANEL four blocks of four faders, left to right; CONTROL two blocks.
+Layout: two tabs, the panel split in two so nothing has to shrink.
+    VCO      CONTROLLER (VOLUME, TUNE, PORTAMENTO knobs stacked, the portamento switch), BENDER (VCO / VCF / LFO MOD
+             sliders, TRANSPOSE), MODULATOR (RATE, the WAVE rotary), VCO (MOD, the RANGE rotary, PW, the PWM switch).
+    VCF      SOURCE MIXER (+ SUB OSC), VCF, VCA (MODE), ENV (+ TRIGGER), QUALITY.
+Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions
+with transparent radio buttons over them (tap a position or its legend).
+Q-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV.
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
@@ -391,18 +392,23 @@ KNOB_FRAMES = 64
 KNOB_SWEEP = 150            # degrees each way (Lemus's knobs)
 
 
+def fader_frames(h):
+    return min(FADER_FRAMES, 16384 // (STRIP_PAD[1] + h + STRIP_PAD[3]))
+
+
 def fader_strip(stripe, h=FH):
     """The cap at each position, alone: the channel, slot and scale are in the page."""
     name = "fader_%s_%d.png" % (stripe, h)
-    if os.path.exists(os.path.join(OUT, name)):
-        return name
     l, t, r, b = STRIP_PAD
     w, fh = l + r, t + h + b
+    frames = fader_frames(h)
+    if os.path.exists(os.path.join(OUT, name)):
+        return name
     m = CAP_W / CAP_MM
-    strip = Image.new("RGBA", (w, fh * FADER_FRAMES), (0, 0, 0, 0))
-    for f in range(FADER_FRAMES):
+    strip = Image.new("RGBA", (w, fh * frames), (0, 0, 0, 0))
+    for f in range(frames):
         p = Painter(w, fh, 0, 0, m)
-        cy = t + (h - CAP_H / 2) - (h - CAP_H) * f / (FADER_FRAMES - 1)
+        cy = t + (h - CAP_H / 2) - (h - CAP_H) * f / (frames - 1)
         draw_cap(p, l / m, cy / m, CAP_MM, CAP_H / m, stripe)
         strip.paste(p.result(), (0, f * fh))
     assert strip.height <= 16384, "film strip too tall for the MPC"
@@ -423,11 +429,11 @@ def knob_strip(name):
 
 
 # ---- the panel's switches (HardwareView::drawSwitch and the rotary switches), each a film strip of its positions ----------
-SW_W, SW_H, SW_PITCH = 26, 42, 34   # a slide switch's cap (px) and its positions' spacing (a fingertip each)
+SW_W, SW_H, SW_PITCH = 34, 52, 42   # a slide switch's cap (px) and its positions' spacing (a fingertip each)
 SW_MM = 8.6                         # Lemus's switch cap width
-ROT_R = 18                          # a rotary switch's knob radius (px)
+ROT_R = 34                          # a rotary switch's knob radius (px)
 ROT_DETENTS = {4: [-45, -15, 15, 45]}
-HS_PITCH, HS_LEVER = 40, 24         # a lever switch's positions' spacing and its lever's diameter (px)
+HS_PITCH, HS_LEVER = 46, 28         # a lever switch's positions' spacing and its lever's diameter (px)
 
 
 def switch_cap(p, cx, cy, w, h):
@@ -632,22 +638,27 @@ class Page:
         name = fader_strip(stripe, h)
         l, t, r, b = STRIP_PAD
         w, fh = l + r, t + h + b
-        self.kids.append(entry(key, strip_def(name, w, fh, FADER_FRAMES), {"version": 1, "handleName": "Data"},
+        self.kids.append(entry(key, strip_def(name, w, fh, fader_frames(h)), {"version": 1, "handleName": "Data"},
                                B(cx - l, top - t, w, fh), P(key), focus="Yes"))
         if value:
             value_well(self.p, cx - 34, top + h + 12, cx + 34, top + h + 38)
             self.kids.append(label(B(cx - 34, top + h + 12, 68, 26), P(key), h=24.0))
         self.extent[key] = (cx - 36, top - 6, cx + 36, top + h + 42)
 
-    def knob(self, key, cx, cy, strip, ticks=11):
+    def knob(self, key, cx, cy, strip, ticks=11, side=False):
         for i in range(ticks):   # the printed scale
             a = -KNOB_SWEEP + 2 * KNOB_SWEEP * i / (ticks - 1)
             printed(self.p, lambda q, a=a: q.line([polar(cx, cy, KNOB_R + 7, a), polar(cx, cy, KNOB_R + (15 if i % 5 == 0 else 12), a)], 2.4, INK))
         self.kids.append(entry(key, strip_def(strip, KNOB_BOX, KNOB_BOX, KNOB_FRAMES), {"version": 1, "handleName": "Data"},
                                B(cx - KNOB_C, cy - KNOB_C, KNOB_BOX, KNOB_BOX), P(key), focus="Yes"))
-        value_well(self.p, cx - 50, cy + 92, cx + 50, cy + 119)
-        self.kids.append(label(B(cx - 50, cy + 92, 100, 27), P(key), h=24.0))
-        self.extent[key] = (cx - 76, cy - 64, cx + 76, cy + 124)
+        if side:   # the value to the right of the knob, under its name
+            value_well(self.p, cx + 80, cy - 4, cx + 180, cy + 23)
+            self.kids.append(label(B(cx + 80, cy - 4, 100, 27), P(key), h=24.0))
+            self.extent[key] = (cx - 64, cy - 62, cx + 184, cy + 62)
+        else:
+            value_well(self.p, cx - 50, cy + 92, cx + 50, cy + 119)
+            self.kids.append(label(B(cx - 50, cy + 92, 100, 27), P(key), h=24.0))
+            self.extent[key] = (cx - 76, cy - 64, cx + 76, cy + 124)
 
     def zones(self, key, boxes, ids=None):
         """Transparent radio buttons: tap a position (or its legend) to pick it."""
@@ -662,7 +673,7 @@ class Page:
     def strip(self, key, name, b, frames):
         self.kids.append(entry(key, strip_def(name, b[2], b[3], frames), {"version": 1, "handleName": "Data"}, B(*b), P(key), focus="Yes"))
 
-    def vswitch(self, key, cx, top, cap=9.5):
+    def vswitch(self, key, cx, top, cap=9.5, limit=None):
         """A slide switch as on the panel: a black cap with a yellow line in a recessed slot, position 0 at the top; the
         legends to its right. Each row (cap and legend) is a tap target."""
         opts = CHOICES[key]
@@ -672,6 +683,7 @@ class Page:
         well(self.p, [cx - SW_W / 2 - 4, top - 4, cx + SW_W / 2 + 4, bot + 4], darker(C["panel"], 0.06), r=1.5, depth=2.5, alpha=0.65, lip=0.32)
         well(self.p, [cx - 4, ys[0] - 6, cx + 4, ys[-1] + 6], C["slot_black"], r=2, depth=3.0, alpha=0.9, lip=0.18)
         right = cx + SW_W / 2 + 14 + max(text_width(o, cap) for o in opts) + 6
+        right = min(right, limit) if limit else right
         for o, y in zip(opts, ys):
             printed(self.p, lambda q, y=y: q.box([cx + SW_W / 2 + 6, y - 1.2, cx + SW_W / 2 + 10, y + 1.2], INK, r=1))
             legend(self.p, o, cx + SW_W / 2 + 14, y, cap, align="l")
@@ -690,12 +702,12 @@ class Page:
         det = ROT_DETENTS[n]
         r = ROT_R
         for i, (o, a) in enumerate(zip(opts, det)):
-            printed(self.p, lambda q, a=a: q.line([polar(cx, cy, r + 4, a), polar(cx, cy, r + 8, a)], 2.0, INK))
-            lx, ly = polar(cx, cy, r + 16, a)
+            printed(self.p, lambda q, a=a: q.line([polar(cx, cy, r + 6, a), polar(cx, cy, r + 12, a)], 2.4, INK))
+            lx, ly = polar(cx, cy, r + 26, a)
             if glyphs:
-                printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 13, 7))
+                printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 20, 11))
             else:
-                legend(self.p, o, lx, ly, 8.5)
+                legend(self.p, o, lx, ly, 11)
         m = r / KNOB_MM
         bx = [int(cx - r - 4), int(cy - r - 4), int(2 * r + 12), int(2 * r + 14)]
         base = Painter(bx[2], bx[3], bx[0] / m, bx[1] / m, m)
@@ -703,7 +715,7 @@ class Page:
         name = film("%s.png" % key, bx[2], bx[3], n, m, bx[0], bx[1],
                     lambda p, f: draw_pointer(p, cx / m, cy / m, KNOB_MM, det[f]), base)
         self.strip(key, name, bx, n)
-        span, top = 72, cy - r - 30
+        span, top = 128, cy - r - 44
         cw = span / n
         self.zones(key, [(cx - span / 2 + i * cw, top, cw, cy + r + 10 - top) for i in range(n)])
 
@@ -736,7 +748,7 @@ class Page:
         kids = [entry("bg", "Image", {"version": 2, "imageType": "Regular", "colour": "0", "image": art}, B(0, 0, W, H))] + self.kids
         rects = []
         for g in self.qrows:
-            assert len(g) == 4, g
+            assert 1 <= len(g) <= 4, g
             ex = [self.extent[k] for k in g]
             rects.append((max(min(e[0] for e in ex), 2), max(min(e[1] for e in ex), 2),
                           min(max(e[2] for e in ex), W - 2), min(max(e[3] for e in ex), H - 2)))
@@ -750,90 +762,102 @@ class Page:
                 "qlinkBoundsData": [B(r[0], r[1], r[2] - r[0], r[3] - r[1]) for r in rects]}
 
 
-# ---- PANEL ----------------------------------------------------------------------------------------------------------------
-PITCH, X0 = 73, 20
-COLS = ["lfo_rate", "vco_mod", "pulse_width", "pulse_level", "saw_level", "sub_level", "noise_level",
-        "vcf_freq", "vcf_res", "vcf_env", "vcf_mod", "vcf_kybd", None, "attack", "decay", "sustain", "release"]
-CAPS = {"lfo_rate": "RATE", "vco_mod": "MOD", "pulse_width": "PW", "pulse_level": "PULSE", "saw_level": "SAW", "sub_level": "SUB",
-        "noise_level": "NOISE", "vcf_freq": "FREQ", "vcf_res": "RES", "vcf_env": "ENV", "vcf_mod": "MOD", "vcf_kybd": "KYBD",
-        "attack": "A", "decay": "D", "sustain": "S", "release": "R"}
-# title, first and last column, the caps' line (the panel's: green on MODULATOR and SOURCE MIXER, orange elsewhere)
-SECTIONS = [("MODULATOR", 0, 0, "green"), ("VCO", 1, 2, "orange"), ("SOURCE MIXER", 3, 6, "green"), ("VCF", 7, 11, "orange"),
-            ("VCA", 12, 12, None), ("ENV", 13, 16, "orange")]
+# ---- the tabs ------------------------------------------------------------------------------------------------------------
 TOP = 96                     # faders' top
+Y0, Y1 = 8, H - 8            # the section boxes
 
 
-def cx_of(i):
-    return X0 + PITCH * i + PITCH // 2
-
-
-def panel_page():
-    p = Page("PANEL", 0)
-    sections(p.p, [(t, X0 + PITCH * a, X0 + PITCH * (b + 1)) for t, a, b, _ in SECTIONS], 8, H - 8)
-    for t, a, b, stripe in SECTIONS:
-        for i in range(a, b + 1):
-            key = COLS[i]
-            if key is None:
-                continue
-            cx = cx_of(i)
-            p.caption(cx, TOP - 20, CAPS[key])
-            p.fader(key, cx, TOP, stripe, numbers=(i == a, i == b))
-    # switches: under their sections, as the panel's
-    sy = TOP + FH + 54
-    p.caption(cx_of(0), sy, "WAVE", 10)
-    p.rotary("lfo_wave", cx_of(0), sy + 90, glyphs=True)
-    p.caption(cx_of(1), sy, "RANGE", 10)
-    p.rotary("range", cx_of(1), sy + 90)
-    p.caption(cx_of(2), sy, "PWM", 10)
-    p.vswitch("pwm_source", cx_of(2) - 20, sy + 24, cap=9)
-    mx = (cx_of(4) + cx_of(5)) // 2
-    p.caption(mx, sy, "SUB OSC", 10)
-    p.vswitch("sub_mode", mx - 40, sy + 24)
-    p.caption(cx_of(12), TOP - 20, "MODE")
-    p.vswitch("vca_mode", cx_of(12) - 25, TOP + 4, cap=7.5)
-    ex = (cx_of(14) + cx_of(15)) // 2
-    p.caption(ex, sy, "TRIGGER", 10)
-    p.vswitch("env_trigger", ex - 50, sy + 24)
-    # the wordmark in the VCF's switch space
-    vx = (cx_of(7) + cx_of(11)) // 2
-    wordmark(p.p, vx, sy + 50, 34)
-    legend(p.p, "MONOPHONIC SYNTHESIZER", vx, sy + 92, 9.5)
-    legend(p.p, "CIRCUIT MODEL BY LEMUS", vx, sy + 116, 8, colour=darker(INK, 0.25))
-    faders = [k for k in COLS if k]
-    p.qrows = [faders[i:i + 4] for i in range(0, 16, 4)]
+def page_one():
+    """CONTROLLER (stacked), BENDER, MODULATOR and VCO: the panel's left side, its switches in their own columns."""
+    p = Page("VCO", 0)
+    kstrip = knob_strip("knob.png")
+    sections(p.p, [("CONTROLLER", 16, 300), ("BENDER", 300, 560), ("MODULATOR", 560, 770), ("VCO", 770, 1264)], Y0, Y1)
+    fh = 300
+    # CONTROLLER: the knobs one above the other, each with its name and value to the right; the portamento switch below
+    for key, cap, cy, lo, hi in [("volume", "VOLUME", 124, "0", "10"), ("tune", "TUNE", 262, "-5", "+5"),
+                                 ("portamento", "PORTAMENTO", 400, "0", "10")]:
+        cx = 84
+        p.knob(key, cx, cy, kstrip, side=True)
+        legend(p.p, cap, cx + 130, cy - 24, 11 if len(cap) > 6 else 12, fit=110)
+        legend(p.p, lo, cx - 50, cy + 60, 9)
+        legend(p.p, hi, cx + 50, cy + 60, 9)
+    p.caption(158, 496, "PORTAMENTO", 10)
+    p.hswitch("porta_mode", 158, 566, order=[1, 2, 0], pitch=62)   # the panel's AUTO / OFF / ON
+    # BENDER: its three sliders, TRANSPOSE under them
+    for key, cap, cx in [("bend_vco", "VCO", 340), ("bend_vcf", "VCF", 425), ("bend_lfo", "LFO MOD", 510)]:
+        p.caption(cx, TOP - 20, cap)
+        p.fader(key, cx, TOP, "orange", h=fh, numbers=(key == "bend_vco", key == "bend_lfo"))
+    p.caption(430, 470, "TRANSPOSE", 10)
+    p.hswitch("transpose", 430, 536)
+    legend(p.p, "PITCH BEND: VCO, VCF", 430, 584, 8, colour=darker(INK, 0.2))
+    legend(p.p, "MOD WHEEL: LFO MOD", 430, 602, 8, colour=darker(INK, 0.2))
+    # MODULATOR: RATE, the wave switch
+    p.caption(606, TOP - 20, "RATE")
+    p.fader("lfo_rate", 606, TOP, "green", h=fh, numbers=(True, True))
+    p.caption(706, TOP - 20, "WAVE")
+    p.rotary("lfo_wave", 708, 216, glyphs=True)
+    # VCO: MOD, RANGE, PW, PWM
+    p.caption(816, TOP - 20, "MOD")
+    p.fader("vco_mod", 816, TOP, "orange", h=fh, numbers=(True, False))
+    p.caption(928, TOP - 20, "RANGE")
+    p.rotary("range", 928, 216)
+    p.caption(1040, TOP - 20, "PW")
+    p.fader("pulse_width", 1040, TOP, "orange", h=fh, numbers=(False, True))
+    p.caption(1166, TOP - 20, "PWM")
+    p.vswitch("pwm_source", 1140, TOP + 10, cap=11)
+    vx = (770 + 1264) / 2
+    wordmark(p.p, vx, 504, 40)
+    legend(p.p, "MONOPHONIC SYNTHESIZER", vx, 552, 10)
+    legend(p.p, "CIRCUIT MODEL BY LEMUS", vx, 578, 8.5, colour=darker(INK, 0.25))
+    p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"],
+               ["lfo_rate", "lfo_wave"], ["vco_mod", "range", "pulse_width", "pwm_source"]]
     return p, p.art()
 
 
-# ---- CONTROL ----------------------------------------------------------------------------------------------------------------
-def control_page():
-    p = Page("CONTROL", 1)
-    kstrip = knob_strip("knob.png")
-    sections(p.p, [("CONTROLLER", 24, 676), ("BENDER", 700, 1052), ("QUALITY", 1076, 1256)], 8, H - 8)
-    ky = 190
-    for key, cap, cx in [("volume", "VOLUME", 130), ("tune", "TUNE", 350), ("portamento", "PORTAMENTO", 570)]:
-        p.caption(cx, ky - 76, cap)
-        p.knob(key, cx, ky, kstrip)
-    legend(p.p, "-5", 350 - 62, ky + 66, 9)
-    legend(p.p, "+5", 350 + 62, ky + 66, 9)
-    legend(p.p, "0", 130 - 62, ky + 66, 9)
-    legend(p.p, "10", 130 + 62, ky + 66, 9)
-    legend(p.p, "0", 570 - 62, ky + 66, 9)
-    legend(p.p, "10", 570 + 62, ky + 66, 9)
-    p.caption(570, 404, "PORTAMENTO", 10)
-    p.hswitch("porta_mode", 570, 470, order=[1, 2, 0], pitch=54)   # the panel's AUTO / OFF / ON
-    wordmark(p.p, 350, 562, 30)
-    for key, cap, cx in [("bend_vco", "VCO", 790), ("bend_vcf", "VCF", 876), ("bend_lfo", "LFO MOD", 962)]:
-        top = 120
-        p.caption(cx, top - 20, cap)
-        p.fader(key, cx, top, "orange", h=170, numbers=(key == "bend_vco", key == "bend_lfo"))
-    legend(p.p, "PITCH BEND: VCO, VCF", 876, 366, 8.5, colour=darker(INK, 0.2))
-    legend(p.p, "MOD WHEEL (CC1): LFO MOD", 876, 386, 8.5, colour=darker(INK, 0.2))
-    p.caption(876, 422, "TRANSPOSE", 10)
-    p.hswitch("transpose", 876, 486)
-    p.vswitch("quality", 1130, 140, cap=11)
+PITCH2, X2 = 79, 16
+COLS2 = ["pulse_level", "saw_level", "sub_level", "noise_level", "vcf_freq", "vcf_res", "vcf_env", "vcf_mod", "vcf_kybd",
+         "attack", "decay", "sustain", "release"]
+CAPS = {"pulse_level": "PULSE", "saw_level": "SAW", "sub_level": "SUB", "noise_level": "NOISE", "vcf_freq": "FREQ",
+        "vcf_res": "RES", "vcf_env": "ENV", "vcf_mod": "MOD", "vcf_kybd": "KYBD", "attack": "A", "decay": "D", "sustain": "S",
+        "release": "R"}
+VCA_W = 96
+
+
+def x2(i):
+    """Column i's left edge: the VCA's column sits between the VCF's and the ENV's."""
+    return X2 + PITCH2 * i + (VCA_W if i >= 9 else 0)
+
+
+def page_two():
+    """SOURCE MIXER, VCF, VCA, ENV and QUALITY: the faders with the switches under them."""
+    p = Page("VCF", 1)
+    vca0, env1 = x2(9) - VCA_W, x2(13)
+    sections(p.p, [("SOURCE MIXER", x2(0), x2(4)), ("VCF", x2(4), vca0), ("VCA", vca0, x2(9)), ("ENV", x2(9), env1),
+                   ("QUALITY", env1, 1264)], Y0, Y1)
+    for i, key in enumerate(COLS2):
+        sec = 0 if i < 4 else 4 if i < 9 else 9
+        last = 3 if i < 4 else 8 if i < 9 else 12
+        cx = x2(i) + PITCH2 // 2
+        p.caption(cx, TOP - 20, CAPS[key])
+        p.fader(key, cx, TOP, "green" if i < 4 else "orange", numbers=(i == sec, i == last))
+    sy = TOP + FH + 54
+    mx = (x2(0) + x2(4)) // 2
+    p.caption(mx, sy, "SUB OSC", 10)
+    p.vswitch("sub_mode", mx - 46, sy + 24, cap=11)
+    ex = (x2(9) + env1) // 2
+    p.caption(ex, sy, "TRIGGER", 10)
+    p.vswitch("env_trigger", ex - 56, sy + 24, cap=11)
+    p.caption(vca0 + VCA_W // 2, TOP - 20, "MODE")
+    p.vswitch("vca_mode", vca0 + 24, TOP + 10, cap=9, limit=x2(9) + 2)
+    vx = (x2(4) + vca0) // 2
+    wordmark(p.p, vx, sy + 64, 34)
+    legend(p.p, "MONOPHONIC SYNTHESIZER", vx, sy + 106, 9.5)
+    legend(p.p, "CIRCUIT MODEL BY LEMUS", vx, sy + 130, 8, colour=darker(INK, 0.25))
+    qx = (env1 + 1264) // 2
+    p.vswitch("quality", qx - 30, TOP + 10, cap=11)
     for i, t in enumerate(["HQ: 4X, AS LEMUS", "AUTO: ECO ON GEN1,", "HQ ON GEN2", "ECO: VCF AT 2X"]):
-        legend(p.p, t, 1166, 330 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
-    p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"]]
+        legend(p.p, t, qx, 300 + i * 22, 8, colour=darker(INK, 0.2), fit=env1 - 1264 - 12 if False else 1264 - env1 - 14)
+    p.qrows = [COLS2[0:4], COLS2[4:8], ["vcf_kybd", "vca_mode"], COLS2[9:13]]
     return p, p.art()
 
 
@@ -872,7 +896,7 @@ def main():
         shutil.rmtree(OUT)
     os.makedirs(OUT)
     Image.new("RGBA", (4, 4), (0, 0, 0, 0)).save(os.path.join(OUT, "blank.png"))
-    pages = [panel_page(), control_page()]
+    pages = [page_one(), page_two()]
     tabs = [p.tab(art) for p, art in pages]
     maps = []
     for p, _ in pages:
