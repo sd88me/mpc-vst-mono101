@@ -26,9 +26,11 @@ m["file64"] = "mono101.so"
 json.dump(m, open(sys.argv[2], "w"), indent=2)
 PY
 cp "$SRC/VST/mono101-arm64.so" "$st/mono101.so"
+mkdir -p "$st/doc"; cp LICENSE "$st/doc/"   # AGPL-3.0: the licence and where the source is, with the binary
+printf 'Mono-101 %s is free software under the GNU AGPL 3.0 (LICENSE).\nIt is a port of the Lemus SH-101 engine (https://github.com/lemus-dev/lemus, AGPL-3.0), modified.\nSource: https://github.com/sd88me/mpc-vst-mono101 (tag v%s)\n' "$VER" "$VER" > "$st/doc/SOURCE.txt"
 printf '<PLUGIN name="Mono-101" descriptiveName="Mono-101" format="VST" category="Synth" manufacturer="sd88me" version="%s" file="mono101.so" uid="4d313031" isInstrument="1" fileTime="0" infoUpdateTime="0" numInputs="0" numOutputs="2" isShell="0"/>\n' "$VER" > "$st/entry.xml"
 python3 "$MPC_VST/tools/release.py" --so "$st/mono101.so" --skin "$st/$DIR" --entry "$st/entry.xml" --version "$VER" \
-  --user-data mono101-presets.txt \
+  --extra "$st/doc:doc" --user-data mono101-presets.txt \
   --repo sd88me/mpc-vst-mono101 --license AGPL-3.0-only --id mono-101 \
   --about "A circuit-modelled SH-101 (the Lemus engine, ported): the manual's 40 sample sounds, user presets, Circuit Bent mods." \
   -o "$st/dist"
