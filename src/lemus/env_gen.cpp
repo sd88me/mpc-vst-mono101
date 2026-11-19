@@ -1,4 +1,5 @@
 // The SH-101's ENV GEN (docs/model-filter.md 4).
+#include "fastmath.h"
 #include "env_gen.h"
 
 #include <algorithm>
@@ -81,11 +82,11 @@ void EnvGen::setControls(double attack, double decay, double sustain, double rel
 	m_vs = (a11 * b2 - a21 * b1) / det;
 	// The per-sample factors (tick).
 	const double t = m_t;
-	m_kTrigHp = std::exp(-t / kTrigTau);
-	m_kTrigAmp = 1 - std::exp(-t / kTrigPole);
-	m_kAttack = std::exp(-t / (m_ra * m_p.c59));
-	m_kDecay = std::exp(-t / (m_rd * m_p.c59));
-	m_k58 = 1 - std::exp(-t / (kR163 * kC58));
+	m_kTrigHp = fastExp(-t / kTrigTau);
+	m_kTrigAmp = 1 - fastExp(-t / kTrigPole);
+	m_kAttack = fastExp(-t / (m_ra * m_p.c59));
+	m_kDecay = fastExp(-t / (m_rd * m_p.c59));
+	m_k58 = 1 - fastExp(-t / (kR163 * kC58));
 	m_vbe37 = kVt * std::log((m_vs - 0.6) / kR166 / kIs + 1);
 	// TR35 in the decay, saturated by IC16a through R159 with R165 across its base: with next to no
 	// collector current its base takes I_S e^(V_BE/V_T) (1/beta_F + 1/(1 + beta_R)), 0.17 I_S e^(...)
@@ -103,8 +104,8 @@ void EnvGen::setControls(double attack, double decay, double sustain, double rel
 	}
 	m_r57On = kR142 * kR41 / (kR142 + kR41) + kRsat;
 	m_v57On = ((m_p.v14 - m_p.vceSat) / kR142 + m_p.vRef / kR41) * m_r57On;
-	m_k57On = std::exp(-t / (m_r57On * kC57));
-	m_k57Off = std::exp(-t / (kR41 * kC57));
+	m_k57On = fastExp(-t / (m_r57On * kC57));
+	m_k57Off = fastExp(-t / (kR41 * kC57));
 }
 
 double EnvGen::tick(bool gate, double kcvVolts, bool lfoSquare)

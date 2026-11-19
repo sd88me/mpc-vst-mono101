@@ -1,5 +1,6 @@
 // The SH-101's filter section: the cutoff CV summer and expo, the IR3109 VCF, the ENV
 // generator and the BA662 VCA with the output stage (docs/model-filter.md).
+#include "fastmath.h"
 #include "filter.h"
 
 #include "env_gen.h"
@@ -252,7 +253,7 @@ struct FilterSection::Impl {
 		//   I = I_knee q / (1 + q^3)^(1/3), with q = I0 e^(-V9/vExpo) / I_knee.
 		if (v9rel == expoIn && expoOut >= 0)
 			return expoOut;
-		const double q = std::exp(lnI0Knee - v9rel / vExpo);
+		const double q = fastExp(lnI0Knee - v9rel / vExpo);
 		expoIn = v9rel;
 		expoOut = kneeN == 3 ? kneeAmps * q / std::cbrt(1 + q * q * q)
 		                     : kneeAmps * q / std::pow(1 + std::pow(q, kneeN), 1 / kneeN);
@@ -267,7 +268,7 @@ void FilterSection::prepare(double r)
 {
 	m->rate = r;
 	m->t = 1 / r;
-	m->kSlew = 1 - std::exp(-2 * kPi * kExpoSlewHz * m->t);
+	m->kSlew = 1 - fastExp(-2 * kPi * kExpoSlewHz * m->t);
 	m->vcf.prepare(r);
 	m->env.prepare(r);
 	m->vca.prepare(r);

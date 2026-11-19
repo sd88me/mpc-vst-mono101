@@ -1,5 +1,6 @@
 // Jack board A's mute: TR7 and its drive from C13, and from C14 when switched off
 // (docs/model-filter.md 5).
+#include "fastmath.h"
 #include "jack_board.h"
 
 #include <algorithm>
@@ -30,7 +31,7 @@ constexpr double kRailTau = 12e-3;
 constexpr double kDownSeconds = 0.3, kFadeSeconds = 0.2; // the thump, then TR7's offset faded out
 
 // exp() with the argument held where the Newton steps can't overflow it.
-double junction(double v, double vt) { return std::exp(std::min(v, 1.2) / vt); }
+double junction(double v, double vt) { return fastExp(std::min(v, 1.2) / vt); }
 } // namespace
 
 void JackBoard::prepare(double fs)
@@ -46,8 +47,8 @@ void JackBoard::setLoad(double ohms)
 	m_load = ohms;
 	m_kth = (kR28 + ohms) / ohms;
 	m_kyx = (kR28 + ohms) / (kR29 + kR28 + ohms);
-	m_relaxA = std::exp(-m_dt / (kR36 * kC13));
-	m_relaxY = std::exp(-m_dt / (kC2 / (1 / kR30 + 1 / (kR29 + kR28 + ohms))));
+	m_relaxA = fastExp(-m_dt / (kR36 * kC13));
+	m_relaxY = fastExp(-m_dt / (kC2 / (1 / kR30 + 1 / (kR29 + kR28 + ohms))));
 }
 
 void JackBoard::powerOn()
@@ -87,7 +88,7 @@ double JackBoard::tick(double jack)
 		double out = solveDown(x0, m_v9Prev) / m_kth;
 		m_v9Prev = m_v9;
 		const double t = double(++m_downN) * m_dt;
-		m_v9 = kSupply * std::exp(-t / kRailTau);
+		m_v9 = kSupply * fastExp(-t / kRailTau);
 		if (t > kDownSeconds) {
 			const double fade = 1 - (t - kDownSeconds) / kFadeSeconds;
 			if (fade <= 0) {

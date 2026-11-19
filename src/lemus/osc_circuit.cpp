@@ -1,5 +1,6 @@
 // The oscillator section's circuit blocks. Values and topology: docs/circuit-osc.md; the model as
 // built and its validation: docs/model-osc.md.
+#include "fastmath.h"
 #include "osc_circuit.h"
 
 #include <algorithm>
@@ -61,7 +62,7 @@ void Portamento::set(double knob, PortaMode mode, double tauMax)
 void Portamento::coefficients()
 {
 	const double c = kC10 * m_tauScale;
-	m_kOff = 1 - std::exp(-m_dt / (m_rPot * c));
+	m_kOff = 1 - fastExp(-m_dt / (m_rPot * c));
 	// TR1's channel near V_DS = 0 is 1 / (2 beta |VP|): keep the explicit steps well inside it.
 	const double tauOn = c / (2 * kBeta * kVp);
 	m_subSteps = std::max(1, int(std::ceil(m_dt / (0.1 * tauOn))));
@@ -95,7 +96,7 @@ double Portamento::tick(double kcv, bool gate, bool portaOff)
 		constexpr double is = 3.3e-14, beta = 300, isd = 2.52e-9, nd = 1.752, icMax = (kV14 - 0.6) / 100e3;
 		vx = m_vx;
 		for (int k = 0; k < 8; ++k) {
-			const double eb = std::exp(std::min(vx, 0.9) / kVT), ed = std::exp(std::min(-vx, 0.9) / (nd * kVT));
+			const double eb = fastExp(std::min(vx, 0.9) / kVT), ed = fastExp(std::min(-vx, 0.9) / (nd * kVT));
 			const double sat = is * eb > icMax;
 			const double ib = is / beta * (eb - 1) + (sat ? is * eb - icMax : 0);
 			const double dib = is / beta * eb / kVT + (sat ? is * eb / kVT : 0);
@@ -103,7 +104,7 @@ double Portamento::tick(double kcv, bool gate, bool portaOff)
 			const double df = -1 / re - 1 / kR16 - 1 / kR23 - dib - isd * ed / (nd * kVT);
 			vx = std::clamp(vx - f / df, -1.0, 0.8);
 		}
-		tr5 = is * std::exp(vx / kVT) > 30e-6;
+		tr5 = is * fastExp(vx / kVT) > 30e-6;
 		--m_busy;
 	} else {
 		vx = (src / re + vpo / kR16) / (1 / re + 1 / kR16);
@@ -139,7 +140,7 @@ double Portamento::tick(double kcv, bool gate, bool portaOff)
 void Bender::prepare(double rate)
 {
 	m_dt = 1 / rate;
-	m_kRelease = std::exp(-m_dt / (kR27 * kC9));
+	m_kRelease = fastExp(-m_dt / (kR27 * kC9));
 	// VR3 LFO MOD OFFSET: IC2a's output at the bus with the MOD released (no tail current), which
 	// needs VR3's wiper at the voltage pin 3 settles to (circuit-osc.md 6.3).
 	m_vr3 = (kV15 / kR10 + kVref / kR8) / (1 / kR10 + 1 / kR8);
@@ -185,7 +186,7 @@ Bender::Out Bender::tick(double triVolts, const Thevenin &vcoModIn)
 	// TR2's left base sees the triangle through R13 / R7 against the bus, its right base the bus.
 	// With no tail current (the MOD released and C9 below a V_BE) the pair carries nothing.
 	const double vd = (triVolts - kVref) * kR7 / (kR13 + kR7);
-	const double th = o.tail != 0 ? std::tanh(vd / (2 * kVT)) : 0.0;
+	const double th = o.tail != 0 ? fastTanh(vd / (2 * kVT)) : 0.0;
 	const double i1 = o.tail * 0.5 * (1 + th), i2 = o.tail - i1;
 	// IC2a's pin 3: R10 from +15 V (SN p.5's half-filled arrow on R10 and R11, though the rest of
 	// the bender board is on +14 V), R8 to the bus, R9 to the trim, and TR2's left collector.
@@ -206,7 +207,7 @@ Bender::Out Bender::tick(double triVolts, const Thevenin &vcoModIn)
 // ---------------------------------------------------------------------------------------------
 // IC12b
 
-void PitchMixer::prepare(double rate) { m_k = 1 - std::exp(-1 / (rate * kR89 * kC35)); }
+void PitchMixer::prepare(double rate) { m_k = 1 - fastExp(-1 / (rate * kR89 * kC35)); }
 void PitchMixer::reset() { m_y = 0; }
 
 double PitchMixer::tick(double ic3a, const Thevenin &tune)
@@ -228,7 +229,7 @@ double Cem3340::idealHz(double ic) const
 		return m_hzLast; // a held CV: the same frequency
 	m_icLast = ic;
 	m_rsLast = rS;
-	m_hzLast = fRef * std::exp(-22 * rS / kRT * (1 - std::max(ic, 0.0) * kRZ / 3.0));
+	m_hzLast = fRef * fastExp(-22 * rS / kRT * (1 - std::max(ic, 0.0) * kRZ / 3.0));
 	return m_hzLast;
 }
 
@@ -352,7 +353,7 @@ void Noise::set(double rmsVolts, double cornerHz)
 {
 	m_rms = rmsVolts;
 	m_cornerHz = cornerHz;
-	m_a1 = std::exp(-2 * kPi * cornerHz / m_rate);
+	m_a1 = fastExp(-2 * kPi * cornerHz / m_rate);
 	// IC12a: (1 + (R86 ∥ C32) / R88) = (23 + s/w2) / (1 + s/w2), bilinear with w2 prewarped.
 	const double w2 = 1 / (kR86 * kC32), g = 1 + kR86 / kR88;
 	const double kk = 1 / std::tan(w2 / (2 * m_rate));

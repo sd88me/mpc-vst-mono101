@@ -1,4 +1,5 @@
 // The SH-101's VCA (BA662A, TR28) and output stage (docs/model-filter.md 5).
+#include "fastmath.h"
 #include "vca_ba662.h"
 
 #include "env_gen.h"
@@ -20,7 +21,7 @@ double softLimit(double v, double lo, double hi)
 		if (x <= k)
 			return x;
 		const double r = top - k;
-		return k + r * std::tanh((x - k) / r);
+		return k + r * fastTanh((x - k) / r);
 	};
 	return v >= 0 ? knee(v, hi) : -knee(-v, -lo);
 }
@@ -77,7 +78,7 @@ double Ba662Vca::controlCurrent(double volts, double ohms)
 	const double drive = volts - p.vRef + p.kneeShiftVolts;
 	if (drive <= 0.3) {
 		// Far below the knee: the junction's own current only.
-		const double i = p.tr28Is * (std::exp(std::max(drive, -1.0) / p.vt) - 1);
+		const double i = p.tr28Is * (fastExp(std::max(drive, -1.0) / p.vt) - 1);
 		m_ie = std::max(i, 0.0);
 		m_ccOut = m_ie;
 		return m_ie;
@@ -85,7 +86,7 @@ double Ba662Vca::controlCurrent(double volts, double ohms)
 	double i = std::max(m_ie, 1e-12);
 	bool converged = false;
 	for (int k = 0; k < 20; ++k) {
-		const double veb = p.vt * std::log1p(i / p.tr28Is);
+		const double veb = p.vt * fastLog1p(i / p.tr28Is);
 		const double f = i * ohms + veb - drive;
 		const double df = ohms + p.vt / (p.tr28Is + i);
 		double di = -f / df;
@@ -122,7 +123,7 @@ double Ba662Vca::tick(double in, double iAbc)
 	// R138 on pin 2 in series) divides it against pin 3's source resistance.
 	const double rIn = 4 * p.inputBeta * p.vt + kR138 * iAbc; // x I_ABC
 	const double vEff = (in * rIn / (rIn + p.pin3Ohms * iAbc) + p.vosVolts) / (1 + iAbc / p.lossAmps);
-	double v6 = p.km * iAbc * std::tanh(vEff / (2 * p.vt)) * kR140;
+	double v6 = p.km * iAbc * fastTanh(vEff / (2 * p.vt)) * kR140;
 	// Pin 6/8 swing on 0/+14 V about the bus: down to ~0.8 V, up past the panel's levels.
 	m_v8 = softLimit(v6, -4.2, 8.0);
 	// VOLUME into IC1a, an M5218 on +9 V: about 1.2-7.8 V.

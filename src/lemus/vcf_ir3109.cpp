@@ -1,4 +1,5 @@
 // The IR3109 VCF and its resonance loop, solved implicitly per sample (docs/model-filter.md 2).
+#include "fastmath.h"
 #include "vcf_ir3109.h"
 
 #include "osc_circuit.h"
@@ -23,7 +24,7 @@ double softplus(double z)
 		return z;
 	if (z < -20 * kW)
 		return 0;
-	return kW * std::log1p(std::exp(z / kW));
+	return kW * fastLog1p(fastExp(z / kW));
 }
 double sigmoid(double z)
 {
@@ -31,7 +32,7 @@ double sigmoid(double z)
 		return 1;
 	if (z < -20 * kW)
 		return 0;
-	return 1 / (1 + std::exp(-z / kW));
+	return 1 / (1 + fastExp(-z / kW));
 }
 
 // tanh through expm1: within a couple of ulp of std::tanh, without cancellation near 0, and
@@ -40,7 +41,7 @@ double otaTanh(double x)
 {
 	if (std::abs(x) > 19)
 		return x > 0 ? 1.0 : -1.0;
-	const double e = std::expm1(2 * x);
+	const double e = fastExpm1(2 * x);
 	return e / (e + 2);
 }
 
@@ -166,13 +167,13 @@ void Ir3109Vcf::otaOut(double t, double x, double &g, double &gt, double &gx) co
 	double lo = p, loP = 1, loX = 0, hi = q, hiQ = 1, hiX = 0;
 	const double dLo = x - m_x0Lo, dHi = m_x0Hi - x;
 	if (dLo < band) {
-		const double a = std::exp(std::max(dLo / vt, -700.0)), s = a + p, s2 = s * s;
+		const double a = fastExp(std::max(dLo / vt, -700.0)), s = a + p, s2 = s * s;
 		lo = p * (a - p) / s;
 		loP = (a * a - 2 * p * a - p * p) / s2;
 		loX = 2 * p * p * a / (vt * s2);
 	}
 	if (dHi < band) {
-		const double b = std::exp(std::max(dHi / vt, -700.0)), s = b + q, s2 = s * s;
+		const double b = fastExp(std::max(dHi / vt, -700.0)), s = b + q, s2 = s * s;
 		hi = q * (b - q) / s;
 		hiQ = (b * b - 2 * q * b - q * q) / s2;
 		hiX = -2 * q * q * b / (vt * s2);
@@ -298,12 +299,12 @@ bool Ir3109Vcf::solve(double iAbc, double a, double vm, double gmix, double line
 		const double dcdy4 = m_follow26 * a + sigmoid(clin - cmin) * (-m_g26 * a - m_follow26 * a);
 		// TR27's emitter current (exponential in its V_BE, limited for Newton).
 		double z = (c - e) * rVt;
-		const double ezc = std::exp(std::min(z, 40.0));
+		const double ezc = fastExp(std::min(z, 40.0));
 		const double ez = ezc * (z > 40 ? 1 + (z - 40) : 1);
 		const double ie = m_ie27 * ez;
 		const double die = m_ie27 * ezc * rVt;
 		// Diode pair.
-		const double ed = std::exp(std::clamp(d * rNvt, -40.0, 40.0)), edi = 1 / ed;
+		const double ed = fastExp(std::clamp(d * rNvt, -40.0, 40.0)), edi = 1 / ed;
 		const double sd = 0.5 * (ed - edi), cd = 0.5 * (ed + edi);
 		const double id = 2 * p.diodeIs * sd, did = 2 * p.diodeIs * cd * rNvt;
 		const double i52 = (e - m_v52 - d) * kG129;

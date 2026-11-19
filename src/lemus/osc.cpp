@@ -1,5 +1,6 @@
 // The oscillator section: the synth and bender boards from the S/H outputs to the source mixer
 // (docs/circuit-osc.md, docs/model-osc.md). The blocks are in osc_circuit.*; this joins them.
+#include "fastmath.h"
 #include "osc.h"
 
 #include "osc_circuit.h"
@@ -146,7 +147,7 @@ struct OscSection::Impl {
 		cem.vVr7 = std::clamp((ic - cem.current(4.75, 0, v12b, f)) * Cem3340::kR108, -5.0, 0.0);
 		// VR4: PULSE WIDTH at 0 gives a square (pin 5 at half the 100 % voltage).
 		pwm.vr4 = PwmNetwork::trimVr4(0.5 * cal.pwFullVolts);
-		pin5K = 1 - std::exp(-dt / pwm.tau());
+		pin5K = 1 - fastExp(-dt / pwm.tau());
 		noise.set(cal.noiseRms, cal.noiseCornerHz);
 		applyControls();
 	}
@@ -180,9 +181,9 @@ void OscSection::prepare(double r)
 	m->noise.prepare(r);
 	m->vco.prepare(r);
 	constexpr double ra = 1 / (1 / ModSwitch::kR173 + 1 / ModSwitch::kR174 + 1 / (ModSwitch::kR172 + ModSwitch::kR188));
-	m->modNoiseHpK = std::exp(-m->dt / (ModSwitch::kC61 * ra));
+	m->modNoiseHpK = fastExp(-m->dt / (ModSwitch::kC61 * ra));
 	constexpr double rb = ModSwitch::kR172 * ModSwitch::kR188 / (ModSwitch::kR172 + ModSwitch::kR188);
-	m->modNoiseLpK = 1 - std::exp(-m->dt / (rb * ModSwitch::kC60));
+	m->modNoiseLpK = 1 - fastExp(-m->dt / (rb * ModSwitch::kC60));
 	m->applyCalibration();
 	reset();
 }
