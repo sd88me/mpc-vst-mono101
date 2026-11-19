@@ -3,13 +3,14 @@
 
 Layout: two tabs.
     PANEL    the synth board's sections as on the instrument: MODULATOR, VCO, SOURCE MIXER, VCF, VCA, ENV. Sixteen faders
-             (Knob film strips dragged vertically) with their values under them, the switches as lit radio buttons.
+             (Knob film strips dragged vertically) with their values under them, the switches as the panel's
+             slide and rotary switches (film strips; tap a position or its legend).
     CONTROL  VOLUME, TUNE, PORTAMENTO (+ mode), the bender's VCO / VCF / LFO MOD sliders, TRANSPOSE, QUALITY.
 Q-Links: PANEL four blocks of four faders, left to right; CONTROL two blocks.
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
-with an orange pointer, light grey buttons with red LEDs. Lit as in SKIN_STUDIO's "Realistic hardware skins" (Model-303):
+with an orange pointer, black slide switches with a yellow line, light lever switches. Lit as in SKIN_STUDIO's "Realistic hardware skins" (Model-303):
 grain, a top-left light, soft cast shadows, recessed wells, knob highlights that stay put. Legends in Univers 53 Extended
 (emboldened), the wordmark in Earth Normal: the faces of our Roland ports.
     python3 tools/make_tui.py [--preview]     # -> skins/ (build-sdk.sh runs it); --preview also writes build/skin-preview/*.png
@@ -421,36 +422,66 @@ def knob_strip(name):
     return save(strip, name)
 
 
-def key_art(w, h, caption, lit):
-    """A radio button as the SH-101's buttons: a light grey cap in a dark well, a red LED, the name printed dark."""
-    p = Painter(w, h, 0, 0, 1.0)
-    p.box([0, 0, w, h], (0x15, 0x14, 0x14), r=6)
-    p.well([0, 0, w, h], r=6, depth=2.5, alpha=0.8, lip=0)
-    dy = 1.2 if lit else 0.0
-    cap = [3.5, 3.5 + dy, w - 3.5, h - 3.5 + dy]
-    p.soft("box", cap, 0.7, 1.4, (1.0, 1.8), r=3)
-    top, bot = brighter(C["cap_light"], 0.08), darker(C["cap_light"], 0.22)
-    if lit:
-        top, bot = darker(top, 0.06), darker(bot, 0.06)
-    p.box(cap, None, r=3, grad=(top, (0, cap[1]), bot, (0, cap[3])))
-    p.box([cap[0] + 1.5, cap[1] + 0.8, cap[2] - 1.5, cap[1] + 1.8], WHITE, 0.55)
-    p.box([cap[0] + 1.5, cap[3] - 1.6, cap[2] - 1.5, cap[3] - 0.6], BLACK, 0.25)
-    led = [cap[0] + 5, (cap[1] + cap[3]) / 2 - 5, cap[0] + 10, (cap[1] + cap[3]) / 2 + 5]
-    p.box([led[0] - 1, led[1] - 1, led[2] + 1, led[3] + 1], BLACK, 0.6, r=1)
-    if lit:
-        p.soft("box", led, 0.55, 3.0, colour=C["led_on"])
-        p.box(led, C["led_on"], r=0.8)
-        p.box([led[0] + 1, led[1] + 1, led[2] - 2, led[1] + 3.5], WHITE, 0.55, r=0.6)
-    else:
-        p.box(led, C["led_off"], r=0.8)
-    cap_h = min(h * 0.26, 11.5)
-    tw = text_width(caption, cap_h)
-    room = cap[2] - led[2] - 8
-    sx = min(1.0, room / tw)
-    cx = (led[2] + 3 + cap[2] - 3) / 2
-    cy = (cap[1] + cap[3]) / 2
-    p.text(caption, [cx - tw * sx / 2, cy - cap_h / 2, cx + tw * sx / 2, cy + cap_h / 2], cap_h, (0x2a, 0x28, 0x26), sx=sx)
-    return p.result()
+# ---- the panel's switches (HardwareView::drawSwitch and the rotary switches), each a film strip of its positions ----------
+SW_W, SW_H, SW_PITCH = 26, 42, 34   # a slide switch's cap (px) and its positions' spacing (a fingertip each)
+SW_MM = 8.6                         # Lemus's switch cap width
+ROT_R = 18                          # a rotary switch's knob radius (px)
+ROT_DETENTS = {4: [-45, -15, 15, 45]}
+HS_PITCH, HS_LEVER = 40, 24         # a lever switch's positions' spacing and its lever's diameter (px)
+
+
+def switch_cap(p, cx, cy, w, h):
+    """A slide switch's cap (drawSwitch): black, a yellow line across, lit as the slider caps."""
+    cap = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
+    p.soft("box", cap, 0.6, 0.8, (0.7, 1.2), r=1.1)
+    p.soft("box", cap, 0.55, 0.22, (0.15, 0.3), r=1.1)
+    p.box(cap, None, r=1.1, grad=((0x2e, 0x2c, 0x30), (cap[0], cap[1]), (0x14, 0x13, 0x15), (cap[0], cap[3])))
+    p.box([cap[0] + 0.5, cap[1] + 0.35, cap[2] - 0.5, cap[1] + 0.75], WHITE, 0.12)
+    p.box([cap[0] + 0.35, cap[1] + 0.6, cap[0] + 0.7, cap[3] - 0.6], WHITE, 0.12)
+    p.box([cap[2] - 0.6, cap[1] + 0.6, cap[2] - 0.25, cap[3] - 0.4], BLACK, 0.4)
+    p.box([cap[0] + 0.5, cap[3] - 0.55, cap[2] - 0.3, cap[3] - 0.2], BLACK, 0.4)
+    p.soft("box", [cap[0] + 0.8, cap[1] + 0.9, cap[0] + w * 0.55, cy - h * 0.12], 0.06, 0.5, colour=WHITE)
+    s = C["stripe_yellow"]
+    p.box([cap[0] + 0.7, cy - 0.42, cap[2] - 0.7, cy + 0.43], s)
+    p.box([cap[0] + 0.7, cy - 0.42, cap[2] - 0.7, cy - 0.17], brighter(s, 0.6), 0.6)
+
+
+def lever(p, x, y, r):
+    """A lever switch's knob (PORTAMENTO, TRANSPOSE): a light round lever, lit from the top left."""
+    p.soft("ellipse", [x - r, y - r, x + r, y + r], 0.65, r * 0.35, (r * 0.3, r * 0.45))
+    p.ellipse([x - r, y - r, x + r, y + r], None, grad=((0xf4, 0xf2, 0xee), (x - r * 0.4, y - r * 0.5), (0x6d, 0x6a, 0x64), (x + r, y + r), True))
+    p.ellipse([x - r, y - r, x + r, y + r], BLACK, 0.25, width=0.8)
+
+
+def wave_glyph(p, kind, cx, cy, w, h, colour=INK):
+    """The LFO's printed wave signs: triangle and square."""
+    x0, x1, y0, y1 = cx - w / 2, cx + w / 2, cy - h / 2, cy + h / 2
+    if kind == "TRI":
+        pts = [(x0, cy), (x0 + w / 4, y0), (x0 + 3 * w / 4, y1), (x1, cy)]
+    elif kind == "SQR":
+        pts = [(x0, y1), (x0, y0), (cx, y0), (cx, y1), (x1, y1), (x1, y0)]
+    elif kind == "RND":   # sample and hold: steps
+        k = w / 4
+        lv = [0.6, 0.0, 1.0, 0.35]
+        pts = []
+        for i, v in enumerate(lv):
+            yy = y0 + h * v
+            pts += [(x0 + i * k, yy), (x0 + (i + 1) * k, yy)]
+    else:                 # noise: a scribble
+        lv = [0.5, 0.1, 0.8, 0.25, 0.95, 0.0, 0.7, 0.3, 0.9, 0.5]
+        pts = [(x0 + w * i / (len(lv) - 1), y0 + h * v) for i, v in enumerate(lv)]
+    p.line(pts, 2.0, colour)
+
+
+def film(name, w, h, frames, scale, ox, oy, draw, base=None):
+    """A film strip w x h per frame: draw(painter, f) on a painter showing page box (ox, oy) at `scale`."""
+    assert h * frames <= 16384, "%s: film strip too tall for the MPC" % name
+    strip = Image.new("RGBA", (w, h * frames), (0, 0, 0, 0))
+    for f in range(frames):
+        p = base.copy() if base else Painter(w, h, ox / scale, oy / scale, scale)
+        draw(p, f)
+        strip.paste(p.result(), (0, f * h))
+    return save(strip, name)
 
 
 def wordmark(p, cx, cy, cap):
@@ -618,17 +649,82 @@ class Page:
         self.kids.append(label(B(cx - 50, cy + 92, 100, 27), P(key), h=24.0))
         self.extent[key] = (cx - 76, cy - 64, cx + 76, cy + 124)
 
-    def radio(self, key, x, y, w, h, gap=6, horizontal=False):
+    def zones(self, key, boxes, ids=None):
+        """Transparent radio buttons: tap a position (or its legend) to pick it."""
+        n = len(boxes)
+        for i, z in enumerate(boxes):
+            bid = ids[i] if ids else i
+            self.kids.append(entry("%s %d" % (key, bid), "Button", {"version": 2, "onImage": "blank.png", "offImage": "blank.png",
+                                                                   "buttonId": bid, "numButtonsInGroup": n, "handleName": "Data",
+                                                                   "gestureBehaviour": GESTURE}, B(*[int(round(v)) for v in z]), P(key)))
+        self.extent[key] = (min(z[0] for z in boxes), min(z[1] for z in boxes), max(z[0] + z[2] for z in boxes), max(z[1] + z[3] for z in boxes))
+
+    def strip(self, key, name, b, frames):
+        self.kids.append(entry(key, strip_def(name, b[2], b[3], frames), {"version": 1, "handleName": "Data"}, B(*b), P(key), focus="Yes"))
+
+    def vswitch(self, key, cx, top, cap=9.5):
+        """A slide switch as on the panel: a black cap with a yellow line in a recessed slot, position 0 at the top; the
+        legends to its right. Each row (cap and legend) is a tap target."""
         opts = CHOICES[key]
-        for i, o in enumerate(opts):
-            on = save(key_art(w, h, o, True), "%s_%d_on.png" % (key, i))
-            off = save(key_art(w, h, o, False), "%s_%d_off.png" % (key, i))
-            bx, by = (x + i * (w + gap), y) if horizontal else (x, y + i * (h + gap))
-            self.kids.append(entry("%s %d" % (key, i), "Button", {"version": 2, "onImage": on, "offImage": off, "buttonId": i,
-                                                                 "numButtonsInGroup": len(opts), "handleName": "Data",
-                                                                 "gestureBehaviour": GESTURE}, B(bx, by, w, h), P(key)))
         n = len(opts)
-        self.extent[key] = (x - 4, y - 4, x + (n * (w + gap) if horizontal else w) + 4, y + (h if horizontal else n * (h + gap)) + 4)
+        ys = [top + SW_H / 2 + i * SW_PITCH for i in range(n)]
+        bot = ys[-1] + SW_H / 2
+        well(self.p, [cx - SW_W / 2 - 4, top - 4, cx + SW_W / 2 + 4, bot + 4], darker(C["panel"], 0.06), r=1.5, depth=2.5, alpha=0.65, lip=0.32)
+        well(self.p, [cx - 4, ys[0] - 6, cx + 4, ys[-1] + 6], C["slot_black"], r=2, depth=3.0, alpha=0.9, lip=0.18)
+        right = cx + SW_W / 2 + 14 + max(text_width(o, cap) for o in opts) + 6
+        for o, y in zip(opts, ys):
+            printed(self.p, lambda q, y=y: q.box([cx + SW_W / 2 + 6, y - 1.2, cx + SW_W / 2 + 10, y + 1.2], INK, r=1))
+            legend(self.p, o, cx + SW_W / 2 + 14, y, cap, align="l")
+        b = [int(cx - SW_W / 2 - 4), int(top - 4), SW_W + 14, int(bot - top) + 14]
+        m = SW_W / SW_MM
+        name = film("%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[f] / m, SW_MM - 0.4, SW_H / m))
+        self.strip(key, name, b, n)
+        x0 = cx - SW_W / 2 - 6
+        self.zones(key, [(x0, y - SW_PITCH / 2, right - x0, SW_PITCH) for y in ys])
+
+    def rotary(self, key, cx, cy, glyphs=False):
+        """A rotary switch as on the panel (WAVE, RANGE): a small black knob with detent ticks and the legends round its
+        top. The columns over it are tap targets (left column, first position)."""
+        opts = CHOICES[key]
+        n = len(opts)
+        det = ROT_DETENTS[n]
+        r = ROT_R
+        for i, (o, a) in enumerate(zip(opts, det)):
+            printed(self.p, lambda q, a=a: q.line([polar(cx, cy, r + 4, a), polar(cx, cy, r + 8, a)], 2.0, INK))
+            lx, ly = polar(cx, cy, r + 16, a)
+            if glyphs:
+                printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 13, 7))
+            else:
+                legend(self.p, o, lx, ly, 8.5)
+        m = r / KNOB_MM
+        bx = [int(cx - r - 4), int(cy - r - 4), int(2 * r + 12), int(2 * r + 14)]
+        base = Painter(bx[2], bx[3], bx[0] / m, bx[1] / m, m)
+        knob_body(base, cx / m, cy / m, KNOB_MM)
+        name = film("%s.png" % key, bx[2], bx[3], n, m, bx[0], bx[1],
+                    lambda p, f: draw_pointer(p, cx / m, cy / m, KNOB_MM, det[f]), base)
+        self.strip(key, name, bx, n)
+        span, top = 72, cy - r - 30
+        cw = span / n
+        self.zones(key, [(cx - span / 2 + i * cw, top, cw, cy + r + 10 - top) for i in range(n)])
+
+    def hswitch(self, key, cx, y, order=None, cap=10, pitch=HS_PITCH):
+        """A lever switch as on the panel (PORTAMENTO, TRANSPOSE): a light round lever in a black slot, the legends above.
+        order: which choice each position (left to right) is."""
+        opts = CHOICES[key]
+        n = len(opts)
+        order = order or list(range(n))
+        xs = [cx + (i - (n - 1) / 2) * pitch for i in range(n)]
+        hr = HS_LEVER / 2 + 2
+        sl = [xs[0] - hr - 4, y - hr, xs[-1] + hr + 4, y + hr]
+        self.p.box(sl, C["slot_black"], r=hr)
+        self.p.well(sl, r=hr, depth=2.5, alpha=0.9, lip=0.28)
+        for i, x in enumerate(xs):
+            legend(self.p, opts[order[i]], x, y - hr - 14, cap)
+        b = [int(sl[0]) - 2, int(sl[1]) - 2, int(sl[2] - sl[0]) + 8, int(sl[3] - sl[1]) + 8]
+        name = film("%s.png" % key, b[2], b[3], n, 1.0, b[0], b[1], lambda p, f: lever(p, xs[order.index(f)], y, HS_LEVER / 2))
+        self.strip(key, name, b, n)
+        top = y - hr - 30
+        self.zones(key, [(x - pitch / 2, top, pitch, y + hr + 6 - top) for x in xs], ids=order)
 
     def caption(self, cx, y, text, cap=11.0):
         legend(self.p, text, cx, y, cap)
@@ -682,23 +778,22 @@ def panel_page():
             cx = cx_of(i)
             p.caption(cx, TOP - 20, CAPS[key])
             p.fader(key, cx, TOP, stripe, numbers=(i == a, i == b))
-    # switches: under their sections
+    # switches: under their sections, as the panel's
     sy = TOP + FH + 54
-    bw, bh = 62, 38
     p.caption(cx_of(0), sy, "WAVE", 10)
-    p.radio("lfo_wave", cx_of(0) - bw // 2, sy + 14, bw, bh)
+    p.rotary("lfo_wave", cx_of(0), sy + 90, glyphs=True)
     p.caption(cx_of(1), sy, "RANGE", 10)
-    p.radio("range", cx_of(1) - bw // 2, sy + 14, bw, bh)
+    p.rotary("range", cx_of(1), sy + 90)
     p.caption(cx_of(2), sy, "PWM", 10)
-    p.radio("pwm_source", cx_of(2) - bw // 2, sy + 14, bw, bh)
+    p.vswitch("pwm_source", cx_of(2) - 20, sy + 24, cap=9)
     mx = (cx_of(4) + cx_of(5)) // 2
     p.caption(mx, sy, "SUB OSC", 10)
-    p.radio("sub_mode", mx - 70, sy + 14, 140, bh)
+    p.vswitch("sub_mode", mx - 40, sy + 24)
     p.caption(cx_of(12), TOP - 20, "MODE")
-    p.radio("vca_mode", cx_of(12) - bw // 2, TOP, bw, 46, gap=10)
+    p.vswitch("vca_mode", cx_of(12) - 25, TOP + 4, cap=7.5)
     ex = (cx_of(14) + cx_of(15)) // 2
     p.caption(ex, sy, "TRIGGER", 10)
-    p.radio("env_trigger", ex - 70, sy + 14, 140, bh)
+    p.vswitch("env_trigger", ex - 50, sy + 24)
     # the wordmark in the VCF's switch space
     vx = (cx_of(7) + cx_of(11)) // 2
     wordmark(p.p, vx, sy + 50, 34)
@@ -724,8 +819,8 @@ def control_page():
     legend(p.p, "10", 130 + 62, ky + 66, 9)
     legend(p.p, "0", 570 - 62, ky + 66, 9)
     legend(p.p, "10", 570 + 62, ky + 66, 9)
-    p.caption(570, 410, "PORTAMENTO MODE", 10)
-    p.radio("porta_mode", 570 - 3 * 66 // 2 - 6, 428, 62, 40, gap=6, horizontal=True)
+    p.caption(570, 404, "PORTAMENTO", 10)
+    p.hswitch("porta_mode", 570, 470, order=[1, 2, 0], pitch=54)   # the panel's AUTO / OFF / ON
     wordmark(p.p, 350, 562, 30)
     for key, cap, cx in [("bend_vco", "VCO", 790), ("bend_vcf", "VCF", 876), ("bend_lfo", "LFO MOD", 962)]:
         top = 120
@@ -733,9 +828,9 @@ def control_page():
         p.fader(key, cx, top, "orange", h=170, numbers=(key == "bend_vco", key == "bend_lfo"))
     legend(p.p, "PITCH BEND: VCO, VCF", 876, 366, 8.5, colour=darker(INK, 0.2))
     legend(p.p, "MOD WHEEL (CC1): LFO MOD", 876, 386, 8.5, colour=darker(INK, 0.2))
-    p.caption(876, 430, "TRANSPOSE", 10)
-    p.radio("transpose", 876 - (3 * 56 + 12) // 2, 448, 56, 40, gap=6, horizontal=True)
-    p.radio("quality", 1166 - 60, 120, 120, 50, gap=12)
+    p.caption(876, 422, "TRANSPOSE", 10)
+    p.hswitch("transpose", 876, 486)
+    p.vswitch("quality", 1130, 140, cap=11)
     for i, t in enumerate(["HQ: 4X, AS LEMUS", "AUTO: ECO ON GEN1,", "HQ ON GEN2", "ECO: VCF AT 2X"]):
         legend(p.p, t, 1166, 330 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
     p.qrows = [["volume", "tune", "portamento", "porta_mode"], ["bend_vco", "bend_vcf", "bend_lfo", "transpose"]]
@@ -776,6 +871,7 @@ def main():
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
+    Image.new("RGBA", (4, 4), (0, 0, 0, 0)).save(os.path.join(OUT, "blank.png"))
     pages = [panel_page(), control_page()]
     tabs = [p.tab(art) for p, art in pages]
     maps = []
