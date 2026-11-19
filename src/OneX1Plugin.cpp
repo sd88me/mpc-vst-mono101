@@ -509,7 +509,9 @@ private:
 			saveFavs();
 			wantDisplay_.store(true);
 		}
-		if (kbDirty_.exchange(false)) { // the keyboard opened or closed, or the typed name changed
+		// the keyboard opened or closed, or the typed name changed. Held for half a second after a state load: the host reads
+		// the restored values back then (host_sim's round trip), and a name redraw then would look like a lost value.
+		if (now - stateAt_.load() > 500 && kbDirty_.exchange(false)) {
 			pushValue(kKbOpen, kbOpen_.load() ? 1.0f : 0.0f);
 			counter_ = (counter_ + 1) % 1024;
 			pushValue(kFavName, float(counter_));
