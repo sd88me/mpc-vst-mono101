@@ -3,8 +3,9 @@
 
 The art is Lemus's own panel: tools/panel/panel.json (Lemus machines/sh101/docs/panel.json, the SH-101's top panel measured
 in mm, AGPL-3.0 like the rest of the port) drawn the way Lemus's HardwareView draws it (plugin/HardwareView.cpp: the case,
-grooves, slider channels, scales, legends, caps, knobs and switches), ported to Pillow. Helvetica Bold becomes Liberation
-Sans Bold (OFL, same metrics). The brand marks are left out, as Lemus leaves them out.
+grooves, slider channels, scales, legends, caps, knobs and switches), ported to Pillow, then lit as in SKIN_STUDIO's
+"Realistic hardware skins" (Model-303): grain, a top-left light, soft shadows, wells, fixed knob highlights. Legends in
+Univers 53 Extended (emboldened), the face of our Roland ports, fitted to Lemus's measured widths. The brand marks are left out, as Lemus leaves them out.
 
 The panel is 6:1, too long for the screen at a size a finger can use, so each tab shows one slice of it at true proportions:
     MOD/VCO   TUNE, MODULATOR, VCO
@@ -17,15 +18,16 @@ Q-Links: blocks of up to four controls left to right per tab.
     python3 tools/make_tui.py [--preview]     # -> skins/ (build-sdk.sh runs it); --preview also writes build/skin-preview/*.png
 """
 import colorsys, json, math, os, shutil, sys
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "skins")
 PREVIEW = os.path.join(ROOT, "build", "skin-preview")
 LOCK = [l.strip() for l in open(os.path.join(ROOT, "params.lock")) if l.strip() and not l.startswith("#")]
 PANEL = json.load(open(os.path.join(ROOT, "tools", "panel", "panel.json")))
-FONT_FILE = os.path.join(ROOT, "tools", "fonts", "LiberationSans-Bold.ttf")
-CAP_RATIO = 0.688           # Liberation Sans: cap height / em
+FONT_FILE = os.path.join(ROOT, "tools", "fonts", "Univers_53_Extended_Regular.otf")   # our Roland ports' face
+CAP_RATIO = 0.722           # Univers 53: cap height / em
+BOLDEN = 0.07               # its one weight, emboldened by a stroke of this much of the cap height
 GESTURE = "Instant"
 W, H = 1280, 628            # content area
 SS = 3                      # supersampling
@@ -127,6 +129,7 @@ class Painter:
     def __init__(self, w, h, ox, oy, scale):
         self.w, self.h, self.ox, self.oy, self.k = w, h, ox, oy, scale * SS
         self.im = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+        self.shift, self.ink = (0.0, 0.0), None   # print's shadow pass: everything moved and in one colour
 
     def copy(self):
         p = Painter.__new__(Painter)
@@ -135,7 +138,7 @@ class Painter:
         return p
 
     def pt(self, x, y):
-        return ((x - self.ox) * self.k, (y - self.oy) * self.k)
+        return ((x + self.shift[0] - self.ox) * self.k, (y + self.shift[1] - self.oy) * self.k)
 
     def rect(self, b):
         x0, y0 = self.pt(b[0], b[1])
@@ -144,6 +147,8 @@ class Painter:
 
     def fill(self, shape, colour, alpha=1.0, grad=None):
         """shape(draw) draws the shape in 255 on a mask; fills it with colour, or grad = (c0, p0, c1, p1[, radial]) in mm."""
+        if self.ink:
+            colour, alpha, grad = self.ink[0], alpha * self.ink[1], None
         m = Image.new("L", self.im.size, 0)
         shape(ImageDraw.Draw(m))
         bb = m.getbbox()
@@ -205,38 +210,117 @@ class Painter:
         pp = [self.pt(*p) for p in pts]
         self.fill(lambda d: d.polygon(pp, fill=255), colour, alpha)
 
-    def arc(self, cx, cy, r, a0, a1, width, colour):
+    def arc(self, cx, cy, r, a0, a1, width, colour, alpha=1.0):
         rr = self.rect([cx - r, cy - r, cx + r, cy + r])
         wpx = max(1, int(round(width * self.k)))
-        self.fill(lambda d: d.arc(rr, a0 - 90, a1 - 90, fill=255, width=wpx), colour)   # Pillow's 0 is 3 o'clock
+        self.fill(lambda d: d.arc(rr, a0 - 90, a1 - 90, fill=255, width=wpx), colour, alpha)   # Pillow's 0 is 3 o'clock
 
     def text(self, label, b, cap_h, colour):
         """Lemus's drawLegend: cap height centred in the box, scaled across to the box's width (0.75-1.3), digits not."""
         px = cap_h * self.k / CAP_RATIO
         font = ImageFont.truetype(FONT_FILE, max(4, int(round(px))))
-        x0, y0, x1, y1 = font.getbbox(label, anchor="ls")
+        sw = max(1, int(round(cap_h * self.k * BOLDEN)))
+        x0, y0, x1, y1 = font.getbbox(label, anchor="ls", stroke_width=sw)
         if x1 <= x0:
             return
         pad = int(px * 0.3) + 2
         tw = x1 - x0
         m = Image.new("L", (tw + 2 * pad, y1 - y0 + 2 * pad), 0)
-        ImageDraw.Draw(m).text((pad - x0, pad - y0), label, font=font, fill=255, anchor="ls")
+        ImageDraw.Draw(m).text((pad - x0, pad - y0), label, font=font, fill=255, anchor="ls", stroke_width=sw, stroke_fill=255)
         bw = (b[2] - b[0]) * self.k
-        sx = 1.0 if label.isdigit() else min(1.3, max(0.75, bw / tw))
+        # Univers runs wide: fit to the panel's measured widths (digits only ever narrowed)
+        sx = min(1.0, max(0.7, bw / tw)) if label.isdigit() else min(1.3, max(0.7, bw / tw))
         m = m.resize((max(1, int(round(m.width * sx))), m.height), Image.LANCZOS)
         bx0, by0, bx1, by1 = self.rect(b)
         caps = any(ch.isupper() or ch.isdigit() for ch in label)
         baseline = (by0 + by1) / 2 + cap_h * self.k / 2 if caps else by1 - max(0, y1)
         dx = int(round((bx0 + bx1) / 2 - m.width / 2))
         dy = int(round(baseline - (pad - y0)))
+        if self.ink:
+            colour = self.ink[0]
+            m = m.point(lambda v: int(v * self.ink[1]))
         layer = Image.new("RGBA", m.size, rgba(colour, 0))
         layer.putalpha(m)
         cx, cy = max(0, -dx), max(0, -dy)
         if cx < layer.width and cy < layer.height:
             self.im.alpha_composite(layer.crop((cx, cy, layer.width, layer.height)), dest=(dx + cx, dy + cy))
 
+    # soft light and shade (SKIN_STUDIO "Realistic hardware skins"): worked on a local crop, blurred, composited
+    def _local(self, b, r, kind, blur_px, extra=0.0):
+        rr = self.rect(b)
+        m = int(3 * blur_px + extra * self.k) + 2
+        x0, y0, x1, y1 = int(rr[0]) - m, int(rr[1]) - m, int(rr[2]) + m + 1, int(rr[3]) + m + 1
+        return x0, y0, (x1 - x0, y1 - y0), [rr[0] - x0, rr[1] - y0, rr[2] - x0, rr[3] - y0]
+
+    @staticmethod
+    def _shape(size, loc, kind, r_px, dx=0.0, dy=0.0):
+        m = Image.new("L", size, 0)
+        box = [loc[0] + dx, loc[1] + dy, loc[2] + dx, loc[3] + dy]
+        d = ImageDraw.Draw(m)
+        if kind == "ellipse":
+            d.ellipse(box, fill=255)
+        else:
+            d.rounded_rectangle(box, r_px, fill=255)
+        return m
+
+    def _put(self, mask, colour, x0, y0, alpha=1.0):
+        if alpha < 1:
+            mask = mask.point(lambda v: int(v * alpha))
+        layer = Image.new("RGBA", mask.size, rgba(colour, 0))
+        layer.putalpha(mask)
+        cx, cy = max(0, -x0), max(0, -y0)
+        cw, ch = min(layer.width, self.im.width - x0), min(layer.height, self.im.height - y0)
+        if cx < cw and cy < ch:
+            self.im.alpha_composite(layer.crop((cx, cy, cw, ch)), dest=(x0 + cx, y0 + cy))
+
+    def soft(self, kind, b, alpha, blur, off=(0.0, 0.0), r=0.0, colour=BLACK):
+        """A blurred shape ("box" or "ellipse"), e.g. a cast shadow: blur and off in mm."""
+        bl = blur * self.k
+        x0, y0, size, loc = self._local(b, r, kind, bl, abs(off[0]) + abs(off[1]))
+        m = self._shape(size, loc, kind, r * self.k, off[0] * self.k, off[1] * self.k).filter(ImageFilter.GaussianBlur(bl))
+        self._put(m, colour, x0, y0, alpha)
+
+    def well(self, b, r=0.0, depth=0.6, alpha=0.6, lip=0.3):
+        """A recess lit from the top left: an inner shadow under its top and left edges, a light lip outside its
+        bottom-right edge (mask - blur(offset(mask)))."""
+        bl = depth * self.k
+        x0, y0, size, loc = self._local(b, r, "box", bl, 2 * depth)
+        M = self._shape(size, loc, "box", r * self.k)
+        S = self._shape(size, loc, "box", r * self.k, depth * self.k, depth * 1.3 * self.k).filter(ImageFilter.GaussianBlur(bl * 0.7))
+        self._put(ImageChops.subtract(M, S), BLACK, x0, y0, alpha)
+        if lip:
+            L = self._shape(size, loc, "box", r * self.k, 0.3 * self.k, 0.35 * self.k)
+            self._put(ImageChops.subtract(L, M).filter(ImageFilter.GaussianBlur(0.08 * self.k)), WHITE, x0, y0, lip)
+
     def result(self):
         return self.im.resize((self.w, self.h), Image.LANCZOS)
+
+
+def diag(w, h, lo, hi):
+    """A top-left (hi) to bottom-right (lo) gradient, L: (x + y) / 2 from two ramps."""
+    gy = Image.linear_gradient("L").resize((w, h))
+    gx = Image.linear_gradient("L").transpose(Image.Transpose.TRANSPOSE).resize((w, h))
+    return ImageChops.add(gx, gy, 2.0).point(lambda v: int(hi + (lo - hi) * v / 255))
+
+
+def surface(im, seed=0):
+    """The plastic under the room's light (after Model-303's plate): a top-left to bottom-right light fall, a faint
+    vignette and a fine moulded grain. On the 1x picture."""
+    w, h = im.size
+    light = diag(w, h, 238, 255)
+    vig = Image.radial_gradient("L").resize((w, h)).point(lambda v: max(0, v - 150) * 22 // 105)
+    import random
+    random.seed(seed)
+    grain = Image.effect_noise((w // 2 + 1, h // 2 + 1), 4.5).resize((w, h), Image.BILINEAR)
+    fine = Image.effect_noise((w, h), 2)
+    out = []
+    for ch in im.split()[:3]:
+        ch = ImageChops.multiply(ch, light).point(lambda v: min(255, v + 7))
+        ch = ImageChops.subtract(ch, vig)
+        ch = ImageChops.add(ch, grain, 1.0, -128)
+        ch = ImageChops.add(ch, fine, 1.0, -128)
+        out.append(ch)
+    return Image.merge("RGBA", out + [im.split()[3]])
 
 
 def polar(cx, cy, r, deg):
@@ -259,24 +343,32 @@ def groove(p, a, b, w):
 
 
 def knob_body(p, cx, cy, r):
-    p.ellipse([cx - r - 0.4, cy - r + 0.6, cx + r + 1.8, cy + r + 3.0], BLACK, 0.28)
-    p.ellipse([cx - r + 0.2, cy - r + 0.7, cx + r + 0.8, cy + r + 1.5], BLACK, 0.35)
-    p.ellipse([cx - r, cy - r, cx + r, cy + r], None, grad=((0x4a, 0x47, 0x4b), (cx - r, cy - r), (0x0e, 0x0d, 0x0f), (cx + r * 0.6, cy + r)))
+    """Lemus's knob (a straight skirt, a slightly domed top) under a fixed top-left light: a soft cast shadow and a
+    contact one, a lit rim on the skirt, a dark far edge and a specular patch on the top. Drawn once; frames add the
+    pointer only, so the highlights stay put while it turns."""
+    box = [cx - r, cy - r, cx + r, cy + r]
+    p.soft("ellipse", box, 0.55, 1.1, (0.9, 1.5))
+    p.soft("ellipse", box, 0.6, 0.3, (0.2, 0.4))
+    p.ellipse(box, None, grad=((0x4a, 0x47, 0x4b), (cx - r, cy - r), (0x0e, 0x0d, 0x0f), (cx + r * 0.6, cy + r)))
+    p.arc(cx, cy, r - 0.35, -95, 25, 0.45, (0x9a, 0x97, 0x9c), 0.55)            # the skirt's rim toward the light
     t = r * 0.86
+    p.soft("ellipse", [cx - t, cy - t, cx + t, cy + t], 0.5, 0.35, (0.25, 0.45))  # the top's step onto the skirt
     p.ellipse([cx - t, cy - t + 0.15, cx + t, cy + t + 0.15], None,
               grad=((0x39, 0x36, 0x3a), (cx - t * 0.6, cy - t * 0.7), (0x17, 0x16, 0x18), (cx + t * 0.5, cy + t * 0.8), True))
+    p.arc(cx, cy + 0.15, t - 0.4, 95, 215, 0.7, BLACK, 0.35)                       # the dome's far edge
     p.ellipse([cx - t, cy - t + 0.15, cx + t, cy + t + 0.15], WHITE, 0.10, width=0.25)
+    p.soft("ellipse", [cx - t * 0.72, cy - t * 0.80, cx + t * 0.02, cy - t * 0.16], 0.16, t * 0.12, colour=WHITE)
 
 
 def channel(p, e):
+    """The slider's recessed channel (Lemus's darker frame) as a well, and the slot as a deep one."""
     b = e["bbox"]
     p.box(b, darker(C["panel"], 0.06))
-    p.box([b[0], b[1], b[0] + 0.6, b[3]], BLACK, 0.55)
-    p.box([b[0], b[3] - 0.7, b[2], b[3]], BLACK, 0.55)
-    p.box([b[0], b[1], b[2], b[1] + 0.35], BLACK, 0.55)
-    p.box([b[2] - 0.35, b[1], b[2], b[3]], WHITE, 0.18)
+    p.well(b, r=0.3, depth=0.7, alpha=0.65, lip=0.32)
     cx = e["x"]
-    p.box([cx - 1.6, e["slot"][1], cx + 1.6, e["slot"][3]], C["slot_black"])
+    slot = [cx - 1.6, e["slot"][1], cx + 1.6, e["slot"][3]]
+    p.box(slot, C["slot_black"], r=0.4)
+    p.well(slot, r=0.4, depth=0.9, alpha=0.9, lip=0.18)
 
 
 def draw_print(p, e):
@@ -337,10 +429,14 @@ def render_static(p, keep):
             b = e["bbox"]
             hh = (b[3] - b[1]) / 2
             p.box(b, C["slot_black"], r=hh)
-            p.outline([b[0] + 0.2, b[1] + 0.25, b[2] + 0.2, b[3] + 0.25], WHITE, 0.2, 0.3, r=hh)
+            p.well(b, r=hh, depth=0.7, alpha=0.9, lip=0.28)
     for t in ("groove", "scale", "line", "arc", "ring", "dot", "arrowhead", "text"):
         for e in ELEMENTS + QUALITY_PRINT:
             if e["type"] == t and (t == "groove" or keep(e)):
+                if t != "groove":   # the ink stands a hair proud of the plastic: a faint shade below it
+                    p.shift, p.ink = (0.1, 0.17), (BLACK, 0.3)
+                    draw_print(p, e)
+                    p.shift, p.ink = (0.0, 0.0), None
                 draw_print(p, e)
     for e in ELEMENTS:   # printed knob scales and the rotary switches' detent ticks
         if not keep(e):
@@ -364,10 +460,14 @@ def draw_slider_cap(p, e, v):
     cy = e["travel"][0] + (e["travel"][1] - e["travel"][0]) * v
     w, h = e["cap_w"], e["cap_h"]
     cap = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
-    p.box([cap[0] + 0.2, cap[1] + 0.7, cap[2] + 0.8, cap[3] + 1.3], BLACK, 0.45, r=1.0)
+    p.soft("box", cap, 0.6, 0.8, (0.7, 1.2), r=1.0)          # cast down-right by the top-left light
+    p.soft("box", cap, 0.55, 0.22, (0.15, 0.3), r=1.0)       # contact
     p.box(cap, None, r=0.9, grad=((0x30, 0x2e, 0x31), (cap[0], cap[1]), (0x16, 0x15, 0x17), (cap[0], cap[3])))
     p.box([cap[0] + 0.5, cap[1] + 0.35, cap[2] - 0.5, cap[1] + 0.75], WHITE, 0.13)
     p.box([cap[0] + 0.35, cap[1] + 0.5, cap[0] + 0.7, cap[3] - 0.5], WHITE, 0.13)
+    p.box([cap[2] - 0.6, cap[1] + 0.6, cap[2] - 0.25, cap[3] - 0.4], BLACK, 0.4)          # the far edges in shade
+    p.box([cap[0] + 0.5, cap[3] - 0.55, cap[2] - 0.3, cap[3] - 0.2], BLACK, 0.4)
+    p.soft("box", [cap[0] + 0.8, cap[1] + 0.9, cap[0] + w * 0.55, cy - h * 0.12], 0.07, 0.5, colour=WHITE)   # sheen
     p.box([cap[0] + 0.6, cy + h * 0.16, cap[2] - 0.6, cy + h * 0.16 + 0.45], BLACK, 0.35)
     s = STRIPES[e["stripe"]]
     p.box([cap[0] + 0.6, cy - 0.45, cap[2] - 0.6, cy + 0.4], s)
@@ -378,9 +478,11 @@ def draw_vswitch(p, e, d):
     cx, y = e["x"], e["positions"][d]
     w, h = e["cap_w"] - 0.6, e["cap_h"]
     cap = [cx - w / 2, y - h * 0.47, cx + w / 2, y - h * 0.47 + h]
-    p.box([cap[0] + 0.2, cap[1] + 0.7, cap[2] + 0.8, cap[3] + 1.3], BLACK, 0.45, r=1.0)
+    p.soft("box", cap, 0.6, 0.8, (0.7, 1.2), r=1.1)
+    p.soft("box", cap, 0.55, 0.22, (0.15, 0.3), r=1.1)
     p.box(cap, None, r=1.1, grad=((0x2e, 0x2c, 0x30), (cap[0], cap[1]), (0x14, 0x13, 0x15), (cap[0], cap[3])))
     p.box([cap[0] + 0.35, cap[1] + 0.6, cap[0] + 0.7, cap[3] - 0.6], WHITE, 0.12)
+    p.box([cap[2] - 0.6, cap[1] + 0.6, cap[2] - 0.25, cap[3] - 0.4], BLACK, 0.4)
     p.box([cx - 1.4, cap[3], cx + 1.4, cap[3] + 1.3], (0x0a, 0x0a, 0x0a))
     s = C["stripe_yellow"]
     p.box([cap[0] + 0.7, y - 0.42, cap[2] - 0.7, y + 0.43], s)
@@ -390,7 +492,7 @@ def draw_vswitch(p, e, d):
 def draw_hswitch(p, e, d):
     x, y = e["positions"][d], (e["bbox"][1] + e["bbox"][3]) / 2
     r = e["lever_d"] / 2
-    p.ellipse([x - r + 0.4, y - r + 0.6, x + r + 0.4, y + r + 0.6], BLACK, 0.5)
+    p.soft("ellipse", [x - r, y - r, x + r, y + r], 0.65, 0.35, (0.4, 0.6))
     p.ellipse([x - r, y - r, x + r, y + r], None, grad=((0xf4, 0xf2, 0xee), (x - r * 0.4, y - r * 0.5), (0x6d, 0x6a, 0x64), (x + r, y + r), True))
 
 
@@ -504,7 +606,7 @@ class View:
     def background(self):
         p = self.painter_for([self.px, 0, self.px + self.pw, H])
         render_static(p, self.keep)
-        return p.result()
+        return surface(p.result(), seed=self.px)
 
 
 class Page:
@@ -533,25 +635,25 @@ class Page:
     def slider(self, view, e, frames=51):
         key = PARAM[e["param"]]
         cx, w, h = e["x"], e["cap_w"], e["cap_h"]
-        b = [cx - w / 2 - 0.3, min(e["travel"]) - h / 2 - 0.3, cx + w / 2 + 1.1, max(e["travel"]) + h / 2 + 1.6]
+        b = [cx - w / 2 - 0.5, min(e["travel"]) - h / 2 - 0.5, cx + w / 2 + 2.4, max(e["travel"]) + h / 2 + 3.0]
         self.strip(key, view, view.page_box(b), frames, lambda p, f: draw_slider_cap(p, e, f / (frames - 1)))
 
     def vswitch(self, view, e):
         key = PARAM[e["param"]]
         w, h, ps = e["cap_w"], e["cap_h"], e["positions"]
-        b = [e["x"] - w / 2 - 0.3, ps[0] - h * 0.47 - 0.3, e["x"] + w / 2 + 1.1, ps[-1] + h * 0.53 + 1.6]
+        b = [e["x"] - w / 2 - 0.5, ps[0] - h * 0.47 - 0.5, e["x"] + w / 2 + 2.4, ps[-1] + h * 0.53 + 3.0]
         sb = self.strip(key, view, view.page_box(b), len(ps), lambda p, f: draw_vswitch(p, e, f))
         self.zones(key, view, sb)
 
     def hswitch(self, view, e):
         key = PARAM[e["param"]]
-        sb = self.strip(key, view, view.page_box(e["bbox"], pad=0.6), len(e["positions"]),
+        sb = self.strip(key, view, view.page_box([e["bbox"][0] - 0.6, e["bbox"][1] - 0.6, e["bbox"][2] + 1.4, e["bbox"][3] + 1.6]), len(e["positions"]),
                         lambda p, f: draw_hswitch(p, e, e["order"].index(f)))
         self.zones(key, view, sb)
 
     def _knob_base(self, view, e):
         r = e["d"] / 2
-        pb = view.page_box([e["x"] - r - 0.6, e["y"] - r - 0.6, e["x"] + r + 2.0, e["y"] + r + 3.2])
+        pb = view.page_box([e["x"] - r - 0.8, e["y"] - r - 0.8, e["x"] + r + 3.6, e["y"] + r + 4.8])
         base = view.painter_for(pb)
         knob_body(base, e["x"], e["y"], r)
         return pb, base, r
@@ -563,7 +665,7 @@ class Page:
         q = r * 0.8   # the legends may cover the strip's corners, not the knob
         self.zones(key, view, view.page_box([e["x"] - q, e["y"] - q, e["x"] + q, e["y"] + q]))
 
-    def knob(self, view, e, frames=128):
+    def knob(self, view, e, frames=64):
         key = PARAM[e["param"]]
         pb, base, r = self._knob_base(view, e)
         frames = min(frames, 16384 // (pb[3] - pb[1]))
