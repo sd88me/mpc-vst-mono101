@@ -461,6 +461,26 @@ def switch_cap(p, cx, cy, w, h):
     p.box([cap[0] + 0.7, cy - 0.42, cap[2] - 0.7, cy - 0.17], brighter(s, 0.6), 0.6)
 
 
+def switch_cap_h(p, cx, cy, w, h):
+    """A slide switch's cap moving sideways: the panel's black cap turned a quarter, its yellow line across the travel,
+    lit from the top left as every other part."""
+    cap = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2]
+    p.soft("box", cap, 0.6, 0.8, (0.7, 1.2), r=1.1)
+    p.soft("box", cap, 0.55, 0.22, (0.15, 0.3), r=1.1)
+    p.box(cap, None, r=1.1, grad=((0x2e, 0x2c, 0x30), (cap[0], cap[1]), (0x14, 0x13, 0x15), (cap[0], cap[3])))
+    p.box([cap[0] + 0.5, cap[1] + 0.35, cap[2] - 0.5, cap[1] + 0.75], WHITE, 0.12)
+    p.box([cap[0] + 0.35, cap[1] + 0.6, cap[0] + 0.7, cap[3] - 0.6], WHITE, 0.12)
+    p.box([cap[2] - 0.6, cap[1] + 0.6, cap[2] - 0.25, cap[3] - 0.4], BLACK, 0.4)
+    p.box([cap[0] + 0.5, cap[3] - 0.55, cap[2] - 0.3, cap[3] - 0.2], BLACK, 0.4)
+    p.soft("box", [cap[0] + 0.9, cap[1] + 0.8, cx - w * 0.1, cap[1] + h * 0.55], 0.06, 0.5, colour=WHITE)
+    s = C["stripe_yellow"]
+    p.box([cx - 0.42, cap[1] + 0.7, cx + 0.43, cap[3] - 0.7], s)
+    p.box([cx - 0.42, cap[1] + 0.7, cx - 0.17, cap[3] - 0.7], brighter(s, 0.6), 0.6)
+
+
+HS_CAP = (48, 32)            # a sideways slide switch's cap (px): along the travel, across
+
+
 def lever(p, x, y, r):
     """A lever switch's knob (PORTAMENTO, TRANSPOSE): a light round lever, lit from the top left."""
     p.soft("ellipse", [x - r, y - r, x + r, y + r], 0.65, r * 0.35, (r * 0.3, r * 0.45))
@@ -823,21 +843,32 @@ class Page:
         e = self.extent[key]
         self.extent[key] = (min(e[0], bx[0]), e[1], max(e[2], bx[0] + bx[2]), max(e[3], bx[1] + bx[3]))
 
-    def hswitch(self, key, cx, y, order=None, cap=10, pitch=HS_PITCH):
-        """A lever switch as on the panel (PORTAMENTO, TRANSPOSE): a light round lever in a black slot, the legends above.
-        order: which choice each position (left to right) is."""
+    def hswitch(self, key, cx, y, order=None, cap=10, pitch=HS_PITCH, style="slide"):
+        """A switch moving sideways, the legends above its positions. style "slide": the panel's black slide switch with
+        its yellow line, in a recessed channel; "lever": the light round lever in a black slot (PORTAMENTO, TRANSPOSE, as on
+        the panel). order: which choice each position (left to right) is."""
         opts = CHOICES[key]
         n = len(opts)
         order = order or list(range(n))
         xs = [cx + (i - (n - 1) / 2) * pitch for i in range(n)]
         hr = HS_LEVER / 2 + 2
-        sl = [xs[0] - hr - 4, y - hr, xs[-1] + hr + 4, y + hr]
-        self.p.box(sl, C["slot_black"], r=hr)
-        self.p.well(sl, r=hr, depth=2.5, alpha=0.9, lip=0.28)
+        if style == "lever":
+            sl = [xs[0] - hr - 4, y - hr, xs[-1] + hr + 4, y + hr]
+            self.p.box(sl, C["slot_black"], r=hr)
+            self.p.well(sl, r=hr, depth=2.5, alpha=0.9, lip=0.28)
+            draw = lambda p, f: lever(p, xs[order.index(f)], y, HS_LEVER / 2)
+            scale = 1.0
+        else:
+            cw, ch = HS_CAP
+            sl = [xs[0] - cw / 2 - 4, y - ch / 2 - 4, xs[-1] + cw / 2 + 4, y + ch / 2 + 4]
+            well(self.p, sl, darker(C["panel"], 0.06), r=1.5, depth=2.5, alpha=0.65, lip=0.32)
+            well(self.p, [xs[0] - 6, y - 4, xs[-1] + 6, y + 4], C["slot_black"], r=2, depth=3.0, alpha=0.9, lip=0.18)
+            scale = ch / SW_MM
+            draw = lambda p, f: switch_cap_h(p, xs[order.index(f)] / scale, y / scale, cw / scale, (ch - 0.6 * scale) / scale)
         for i, x in enumerate(xs):
             legend(self.p, opts[order[i]], x, y - hr - 14, cap)
         b = [int(sl[0]) - 2, int(sl[1]) - 2, int(sl[2] - sl[0]) + 8, int(sl[3] - sl[1]) + 8]
-        name = film("sw_%s.png" % key, b[2], b[3], n, 1.0, b[0], b[1], lambda p, f: lever(p, xs[order.index(f)], y, HS_LEVER / 2))
+        name = film("sw_%s.png" % key, b[2], b[3], n, scale, b[0], b[1], draw)
         self.strip(key, name, b, n)
         top = y - hr - 30
         self.zones(key, [(x - pitch / 2, top, pitch, y + hr + 6 - top) for x in xs], ids=order)
@@ -911,13 +942,13 @@ def page_one():
         legend(p.p, lo, cx - 50, cy + 58, 9)
         legend(p.p, hi, cx + 50, cy + 58, 9)
     p.caption(173, SY, "PORTAMENTO", 10)
-    p.hswitch("porta_mode", 173, SW_Y, order=[1, 2, 0], pitch=62)   # the panel's AUTO / OFF / ON
+    p.hswitch("porta_mode", 173, SW_Y, order=[1, 2, 0], pitch=62, style="lever")   # the panel's AUTO / OFF / ON
     # BENDER: its three sliders, TRANSPOSE under them
     for key, cap, cx in [("bend_vco", "VCO", 385), ("bend_vcf", "VCF", 475), ("bend_lfo", "LFO MOD", 565)]:
         p.caption(cx, TOP - 20, cap)
         p.fader(key, cx, TOP, "orange", h=FH, numbers=(key == "bend_vco", key == "bend_lfo"))
     p.caption(475, SY, "TRANSPOSE", 10)
-    p.hswitch("transpose", 475, SW_Y, pitch=56)
+    p.hswitch("transpose", 475, SW_Y, pitch=56, style="lever")
     # MODULATOR: RATE, the wave switch under it
     p.caption(710, TOP - 20, "RATE")
     p.fader("lfo_rate", 710, TOP, "green", h=FH, numbers=(True, True))
@@ -991,7 +1022,7 @@ def page_three():
     sections(p.p, BENT, Y0, Y1, head=HEAD, cap=15)
     mid = lambda name: [(a + b) / 2 for t, a, b in BENT if t == name][0]
     # the row along the bottom: CIRCUIT and each mod's ON / OFF
-    p.hswitch("mods", mid("CIRCUIT"), SW_Y, pitch=58, cap=9.5)
+    p.hswitch("mods", mid("CIRCUIT"), SW_Y, pitch=50, cap=9)
     p.hswitch("pwm_mod_on", mid("PWM SOURCE"), SW_Y, pitch=46)
     p.hswitch("tri_on", mid("TRI VCO"), SW_Y, pitch=46)
     p.hswitch("drive_on", mid("OVERDRIVE"), SW_Y, pitch=46)
