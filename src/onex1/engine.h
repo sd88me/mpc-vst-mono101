@@ -4,9 +4,9 @@
 // MIDI -> VoiceKeys -> the board's lines, the MODULATOR at the host rate, sample-accurate line
 // changes, and the voice sleeping once it is silent and settled. The plugin and the test harness
 // both drive this class, so the harness hears what the plugin plays.
-#include "lfo.h"
-#include "voice.h"
-#include "voice_keys.h"
+#include "lemus/lfo.h"
+#include "lemus/voice.h"
+#include "lemus/voice_keys.h"
 
 #include <algorithm>
 #include <cmath>
@@ -39,6 +39,7 @@ public:
 		m_keys.reset();
 		m_mod.assign(size_t(std::max(maxBlock, 1)), {});
 		m_lines = {};
+		m_lastSquare = false;
 		m_asleep = false;
 		m_quietSamples = 0;
 		m_perf = {};
@@ -80,7 +81,17 @@ public:
 			}
 			const auto lfo = m_lfo.tick();
 			m_mod[size_t(i)] = {lfo.tri, lfo.square};
-			if (m_keys.tick(range, m_controls.trigger, transpose)) {
+			// RANDOM: the firmware puts a new random code on S/H channel 2 at each MODULATOR clock
+			// (Lemus's voice mode holds it still: there is no firmware). Only while RANDOM is picked,
+			// so the other waves render as Lemus's voice mode does.
+			bool randomStep = false;
+			if (lfo.square && !m_lastSquare && m_controls.lfoWave == sh101::LfoWave::Random) {
+				m_rng = m_rng * 1664525u + 1013904223u;
+				m_random = int(m_rng >> 26); // 6 bits
+				randomStep = true;
+			}
+			m_lastSquare = lfo.square;
+			if (m_keys.tick(range, m_controls.trigger, transpose) || randomStep) {
 				if (i > done) {
 					renderVoice(out + done, i - done, m_mod.data() + done);
 					done = i;
@@ -89,7 +100,8 @@ public:
 				if (l.gate != m_lines.gate || l.kcv != m_lines.kcv || l.range != m_lines.range || l.portaOff != m_lines.portaOff)
 					m_asleep = false;
 				m_lines = l;
-				m_voice.setLines(l);
+				m_lines.random = m_random;
+				m_voice.setLines(m_lines);
 				m_lfo.setClkRst(l.clkRst);
 			}
 		}
@@ -111,6 +123,9 @@ private:
 	double m_rate = 44100;
 	double m_bend = 0, m_modPush = 0;
 	bool m_asleep = false;
+	bool m_lastSquare = false;
+	unsigned m_rng = 0x2545f491u;
+	int m_random = 0;
 	int m_quietSamples = 0;
 	sh101::Voice::Probe m_quietFrom;
 

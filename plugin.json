@@ -1,0 +1,17 @@
+{
+  "name": "1x1",
+  "manufacturer": "sd88me",
+  "version": "0.1.0",
+  "format": "vst2",
+  "kind": "instrument",
+  "uid": "S1x1",
+  "numInputs": 0,
+  "numOutputs": 2,
+  "category": "Synth",
+  "file32": "VST/onex1-arm32.so",
+  "file64": "VST/onex1-arm64.so",
+  "description": "A circuit-modelled SH-101 voice (Lemus): the synth board solved part by part from the schematic, played from MIDI. No sequencer, no ROM.",
+  "author": "sd88me",
+  "url": "https://github.com/sd88me/mpc-vst-1x1",
+  "license": "AGPL-3.0-only"
+}

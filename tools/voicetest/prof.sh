@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 H=${FORCE:-${LIVE3:-root@192.168.2.217}}
 T=${TMPDIR:-/tmp}/1x1prof; mkdir -p $T
 L=../../src/lemus
-arm-linux-gnueabihf-g++ -O3 -g -std=c++17 -mcpu=cortex-a17 -mfpu=neon-vfpv4 -mfloat-abi=hard -static -Wno-psabi -I$L -I../../src/onex1 \
+arm-linux-gnueabihf-g++ -O3 -g -std=c++17 -mcpu=cortex-a17 -mfpu=neon-vfpv4 -mfloat-abi=hard -static -Wno-psabi -I$L -I../../src -I../../src/onex1 \
   vtest.cpp $L/*.cpp pcprof.cpp -o $T/vpc
 ssh $H 'mkdir -p /tmp/1x1prof'
 scp -q $T/vpc $H:/tmp/1x1prof/vpc

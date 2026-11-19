@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 L=../../src/lemus
 SRC="vtest.cpp $(ls $L/*.cpp | tr '\n' ' ')"
-INC="-I$L -I../../src/onex1"
+INC="-I$L -I../../src -I../../src/onex1"
 g++ -O3 -std=c++17 $INC $SRC -o vtest
 arm-linux-gnueabihf-g++ -O3 -std=c++17 -mcpu=cortex-a17 -mfpu=neon-vfpv4 -mfloat-abi=hard -static -Wno-psabi $INC $SRC -o vtest-arm32
 if command -v aarch64-linux-gnu-g++ >/dev/null; then
