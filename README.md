@@ -1,11 +1,16 @@
 # Mono-101
 
-A circuit-modelled SH-101 for the Akai MPC standalone, as a native plugin instrument. Its voice is not an
-oscillator-and-filter imitation: every stage of the original (the CEM3340 VCO with its pulse-width and sub-oscillator
-circuits, the noise source and source mixer, the IR3109 filter and its resonance loop, the envelope, the BA662 VCA,
-the modulator and the bender board) is solved as a circuit from Roland's service-notes schematic. It has the
-original's 40 factory sample sounds, 15 of its own, 32 user presets you name on screen, and a **Circuit Bent** page
-of switchable mods.
+**Mono-101 is a port of the [Lemus](https://github.com/lemus-dev/lemus) SH-101 engine to the Akai MPC standalone.**
+The circuit model is the Lemus authors' work. Mono-101 takes their SH-101 synth board, runs it as a native MPC
+plugin instrument, and modifies the engine to suit our vision of the instrument: faster maths for the MPC's CPUs,
+an ECO quality mode, the original's random LFO stepping, and a **Circuit Bent** page of new circuits (overdrive,
+PWM sources, VCF FM, a triangle VCO, LFO range, key trigger and tempo sync). Around it: a hardware-style skin, the
+original's 40 factory sample sounds, 15 presets of our own and 32 user presets you name on screen.
+
+The voice is not an oscillator-and-filter imitation. In Lemus every stage of the original (the CEM3340 VCO with its
+pulse-width and sub-oscillator circuits, the noise source and source mixer, the IR3109 filter and its resonance loop,
+the envelope, the BA662 VCA, the modulator and the bender board) is solved as a circuit from Roland's service-notes
+schematic.
 
 ![VCO tab](docs/screenshots/vco-tab.png)
 ![VCF tab](docs/screenshots/vcf-tab.png)
