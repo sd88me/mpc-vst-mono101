@@ -3,7 +3,7 @@
 # best of 3 on an A55 (core 2) and an A76 (core 5). ARCH=arm32 times the Gen1 build (AArch32 on the Live III).
 set -e
 cd "$(dirname "$0")"
-L=${LIVE3:-root@192.168.2.217}
+L=${LIVE3:?set LIVE3=root@<device address>}
 B=vtest-${ARCH:-arm64}
 ssh $L 'mkdir -p /nvme/1x1-bench/golden'
 scp -q $B $L:/nvme/1x1-bench/vtest

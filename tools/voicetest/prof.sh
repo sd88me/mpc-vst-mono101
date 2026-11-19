@@ -4,7 +4,7 @@
 #   prof.sh [WORKLOAD] [nfuncs] [nlines]
 set -e
 cd "$(dirname "$0")"
-H=${FORCE:-${LIVE3:-root@192.168.2.217}}
+H=${FORCE:-${LIVE3:?set FORCE or LIVE3=root@<device address>}}
 T=${TMPDIR:-/tmp}/1x1prof; mkdir -p $T
 L=../../src/lemus
 arm-linux-gnueabihf-g++ -O3 -g -std=c++17 -mcpu=cortex-a17 -mfpu=neon-vfpv4 -mfloat-abi=hard -static -Wno-psabi -I$L -I../../src -I../../src/onex1 \
