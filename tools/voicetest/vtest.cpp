@@ -91,6 +91,7 @@ static std::vector<float> render(const Workload &w, Timing *tm = nullptr)
 	Controls c;
 	w.setup(c);
 	e->setControls(c);
+	e->eco = getenv("VTEST_ECO") != nullptr;
 	e->prepare(kRate, kBlock);
 	const int total = int(w.seconds * kRate);
 	const auto ev = line(w.seconds, w.midi);
@@ -117,7 +118,7 @@ static std::vector<float> render(const Workload &w, Timing *tm = nullptr)
 			static long lastRetried = 0;
 			if (p == 0)
 				lastRetried = st.retried;
-			static long lastIt = 0, lastSolves = 0; printf("%s %.4f %.1f %ld %.2f\n", w.name, p / kRate, 100 * blocks.back(), st.retried - lastRetried, double(st.iterations - lastIt) / std::max(1L, st.solves - lastSolves)); lastIt = st.iterations; lastSolves = st.solves;
+			static long lastIt = 0, lastSolves = 0; printf("%s %.4f %.1f %ld %.2f %.0f\n", w.name, p / kRate, 100 * blocks.back(), st.retried - lastRetried, double(st.iterations - lastIt) / std::max(1L, st.solves - lastSolves), e->probe().vcfHz); lastIt = st.iterations; lastSolves = st.solves;
 			lastRetried = st.retried;
 		}
 	}
@@ -233,8 +234,70 @@ static double spectralCompare(const char *name, const std::vector<float> &ref, c
 	return sum / cnt;
 }
 
+// Peak frequency (parabolic on log magnitude) and RMS of 8192 samples from t0, and the lag of y against x.
+static void peak(const std::vector<float> &x, double t0, double &hz, double &rms)
+{
+	const int n = 8192, i0 = int(t0 * kRate);
+	std::vector<std::complex<double>> a(n);
+	double s = 0;
+	for (int i = 0; i < n; ++i) {
+		const double v = x[size_t(i0 + i)];
+		s += v * v;
+		a[i] = v * (0.5 - 0.5 * std::cos(2 * M_PI * i / (n - 1)));
+	}
+	rms = std::sqrt(s / n);
+	fft(a);
+	int k = 5;
+	for (int j = 5; j < n / 2 - 1; ++j)
+		if (std::abs(a[j]) > std::abs(a[k]))
+			k = j;
+	const double y0 = std::log(std::abs(a[k - 1])), y1 = std::log(std::abs(a[k])), y2 = std::log(std::abs(a[k + 1]));
+	hz = (k + 0.5 * (y0 - y2) / (y0 - 2 * y1 + y2)) * kRate / n;
+}
+
 int main(int argc, char **argv)
 {
+	if (argc > 1 && std::string(argv[1]) == "selfosc") {
+		// Self-oscillation pitch, HQ against ECO, over FREQ: sources off, RES 10, VCA on GATE, a held C3.
+		for (double fr = 0.30; fr <= 1.0001; fr += 0.05) {
+			double hz[2], rms[2];
+			for (int eco = 0; eco < 2; ++eco) {
+				std::unique_ptr<onex1::Engine> e(new onex1::Engine);
+				Controls c;
+				c.pulseLevel = c.sawLevel = c.subLevel = c.noiseLevel = 0;
+				c.vcfRes = 1;
+				c.vcfFreq = fr;
+				c.vcfEnv = 0;
+				c.vcaMode = sh101::VcaMode::Gate;
+				e->setControls(c);
+				e->eco = eco;
+				e->prepare(kRate, kBlock);
+				std::vector<float> out(size_t(1.5 * kRate) + kBlock);
+				onex1::Event on = {0, {0x90, 48, 100}};
+				for (size_t p = 0; p + kBlock <= out.size(); p += kBlock)
+					e->render(out.data() + p, kBlock, &on, p == 0 ? 1 : 0);
+				peak(out, 1.2, hz[eco], rms[eco]);
+			}
+			printf("FREQ %.2f: HQ %9.2f Hz  ECO %9.2f Hz  %+6.2f cents  %+5.2f dB\n", fr, hz[0], hz[1], 1200 * std::log2(hz[1] / hz[0]),
+			       20 * std::log10(rms[1] / rms[0]));
+		}
+		return 0;
+	}
+	if (argc > 4 && std::string(argv[1]) == "compare") {
+		// vtest compare DIR_A DIR_B WORKLOAD [t0 ...]: peak and RMS in each, cents and dB of B against A.
+		std::vector<float> a, b;
+		readF32(std::string(argv[2]) + "/" + argv[4] + ".f32", a);
+		readF32(std::string(argv[3]) + "/" + argv[4] + ".f32", b);
+		for (int k = 5; k < argc; ++k) {
+			const double t0 = atof(argv[k]);
+			double fa, ra, fb, rb;
+			peak(a, t0, fa, ra);
+			peak(b, t0, fb, rb);
+			printf("%s @%.2fs: A %9.2f Hz | B %9.2f Hz | %+7.2f cents  %+6.2f dB\n", argv[4], t0, fa, fb, 1200 * std::log2(fb / fa),
+			       20 * std::log10(rb / ra));
+		}
+		return 0;
+	}
 	const std::string mode = argc > 1 ? argv[1] : "time";
 	const std::string dir = argc > 2 ? argv[2] : "golden";
 	int bad = 0;

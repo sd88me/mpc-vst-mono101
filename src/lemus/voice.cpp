@@ -1,6 +1,7 @@
 // The synth board: the oscillator section into the filter section, oversampled.
 #include "voice.h"
 
+#include <cmath>
 #include <vector>
 
 namespace sh101 {
@@ -12,6 +13,8 @@ struct Voice::Impl {
 	FilterSection filter;
 	JackBoard jack;
 	Decimator dec;
+	bool ecoWanted = false, eco = false; // 1x1
+	Decimator::HalfBand mixDec;          // 1x1: ECO's source mixer, full rate to the filter's
 	double hostRate = 44100;
 	double env = 0;
 	std::vector<float> work;
@@ -26,12 +29,17 @@ void Voice::prepare(double hostRate)
 	m->hostRate = hostRate;
 	// 4x below 50 kHz host rates, 2x up to 100 kHz, then none: the internal rate stays at
 	// 176-192 kHz.
-	m->dec.setStages(hostRate < 50e3 ? 2 : hostRate < 100e3 ? 1 : 0);
+	const int stages = hostRate < 50e3 ? 2 : hostRate < 100e3 ? 1 : 0;
+	m->eco = m->ecoWanted && stages > 0;
+	m->dec.setStages(m->eco ? stages - 1 : stages);
 	m->work.assign(size_t(m->dec.factor()), 0.0f);
-	m->osc.prepare(internalRate());
-	m->filter.prepare(internalRate());
+	const double oscRate = hostRate * (1 << stages), filterRate = m->eco ? oscRate / 2 : oscRate;
+	m->osc.prepare(oscRate);
+	m->filter.prepare(filterRate);
+	m->filter.setNoiseScale(m->eco ? std::sqrt(0.5) : 1.0);
 	m->jack.setLoad(m->cal.filter.loadOhms);
-	m->jack.prepare(internalRate());
+	m->jack.prepare(filterRate);
+	m->mixDec.design(12, 0.0, 100.0); // the main decimator's first stage
 	reset();
 }
 
@@ -40,6 +48,7 @@ void Voice::reset()
 	m->osc.reset();
 	m->filter.reset();
 	m->dec.reset();
+	m->mixDec.reset();
 	m->env = 0;
 }
 
@@ -75,9 +84,47 @@ void Voice::setLines(const CpuLines &lines)
 	m->probe.gate = lines.gate;
 }
 
+void Voice::setEco(bool eco) { m->ecoWanted = eco; }
+bool Voice::eco() const { return m->eco; }
+
+namespace {
+// The source mixer as one Thevenin source (FilterSection::tick's sum).
+inline void mixSum(const OscFrame &o, double &v, double &r)
+{
+	double g = 0, gv = 0;
+	for (const auto &src : o.mix) {
+		if (src.ohms <= 0)
+			continue;
+		g += 1 / src.ohms;
+		gv += src.volts / src.ohms;
+	}
+	v = g > 0 ? gv / g : 0;
+	r = g > 0 ? 1 / g : 1e12;
+}
+} // namespace
+
 void Voice::render(float *out, int n, const ModFrame *mod)
 {
 	const int f = m->dec.factor();
+	if (m->eco) {
+		for (int i = 0; i < n; ++i) {
+			for (int k = 0; k < f; ++k) {
+				// One ENV step per filter step; the oscillator's two steps see the same ENV.
+				const double env = m->filter.tickEnv(mod[i]);
+				double va, vb, ra, rb;
+				mixSum(m->osc.tick(mod[i], env), va, ra);
+				const OscFrame o = m->osc.tick(mod[i], env);
+				mixSum(o, vb, rb);
+				const double v = m->mixDec.process(va, vb);
+				if (m->jack.poweringDown())
+					m->filter.setSupply(m->jack.railVolts());
+				m->work[size_t(k)] = float(m->jack.tick(m->filter.tick(o, v, rb)) * kOutputScale);
+			}
+			out[i] = f > 1 ? m->dec.process(m->work.data()) : m->work[0];
+		}
+		updateProbe();
+		return;
+	}
 	for (int i = 0; i < n; ++i) {
 		for (int k = 0; k < f; ++k) {
 			const double env = m->filter.tickEnv(mod[i]);
@@ -88,6 +135,11 @@ void Voice::render(float *out, int n, const ModFrame *mod)
 		}
 		out[i] = f > 1 ? m->dec.process(m->work.data()) : m->work[0];
 	}
+	updateProbe();
+}
+
+void Voice::updateProbe()
+{
 	m->probe.cvVolts = m->osc.pitchVolts();
 	m->probe.vcoHz = m->osc.vcoHz();
 	m->probe.vcfHz = m->filter.vcfHz();
@@ -106,7 +158,12 @@ bool Voice::powering() const { return m->jack.powering(); }
 bool Voice::muting() const { return m->jack.muting(); }
 
 double Voice::internalRate() const { return m->hostRate * m->dec.factor(); }
-double Voice::latencySamples() const { return m->dec.latency(); }
+double Voice::latencySamples() const
+{
+	// ECO: the mixer's half-band at the oscillator's rate adds its delay.
+	const double mix = m->eco ? (2.0 * 12 - 1) / 2.0 / (2 * m->dec.factor()) : 0.0;
+	return m->dec.latency() + mix;
+}
 Voice::Probe Voice::probe() const { return m->probe; }
 
 } // namespace sh101

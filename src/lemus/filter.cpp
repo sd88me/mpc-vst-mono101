@@ -134,6 +134,7 @@ struct FilterSection::Impl {
 	// audible, it is what starts self-oscillation with every source at 0, as in the real unit. A
 	// fixed-seed generator keeps renders repeatable.
 	static constexpr double kNoiseVolts = 20e-6; // RMS
+	double noiseScale = 1; // 1x1: ECO
 	uint32_t noiseState = 0x9e3779b9u;
 	double circuitNoise()
 	{
@@ -144,7 +145,7 @@ struct FilterSection::Impl {
 			noiseState ^= noiseState << 5;
 			s += double(noiseState) / 4294967296.0 - 0.5;
 		}
-		return s * kNoiseVolts * std::sqrt(3.0); // four uniforms: variance 4/12
+		return s * kNoiseVolts * noiseScale * std::sqrt(3.0); // four uniforms: variance 4/12
 	}
 
 	void applyCalibration()
@@ -313,13 +314,6 @@ double FilterSection::tickEnv(const ModFrame &mod)
 
 double FilterSection::tick(const OscFrame &osc)
 {
-	Impl &s = *m;
-	// Cutoff: IC18b, the pin-9 divider, the expo.
-	const double v18 = s.summer(s.envV, osc);
-	s.v9 = v18 * s.divRatio;
-	s.v9Lp += (s.v9 - s.v9Lp) * s.kSlew;
-	s.iAbcVcf = s.expoCurrent(s.v9Lp);
-
 	// The source mixer as one Thevenin source.
 	double g = 0, gv = 0;
 	for (const auto &src : osc.mix) {
@@ -328,7 +322,21 @@ double FilterSection::tick(const OscFrame &osc)
 		g += 1 / src.ohms;
 		gv += src.volts / src.ohms;
 	}
-	const double mixV = (g > 0 ? gv / g : 0) + s.circuitNoise(), mixR = g > 0 ? 1 / g : 1e12;
+	return tick(osc, g > 0 ? gv / g : 0, g > 0 ? 1 / g : 1e12);
+}
+
+void FilterSection::setNoiseScale(double k) { m->noiseScale = k; }
+
+double FilterSection::tick(const OscFrame &osc, double mixVolts, double mixR)
+{
+	Impl &s = *m;
+	// Cutoff: IC18b, the pin-9 divider, the expo.
+	const double v18 = s.summer(s.envV, osc);
+	s.v9 = v18 * s.divRatio;
+	s.v9Lp += (s.v9 - s.v9Lp) * s.kSlew;
+	s.iAbcVcf = s.expoCurrent(s.v9Lp);
+
+	const double mixV = mixVolts + s.circuitNoise();
 	const double vin = s.vcf.tick(s.iAbcVcf, s.c.vcfRes, mixV, mixR);
 
 	// VCA control: the ENV through R197 (R196 from +14 V on S6's side) and R133, or the GATE level

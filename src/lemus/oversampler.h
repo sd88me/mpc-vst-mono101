@@ -19,7 +19,7 @@ public:
 	// Delay at the output rate, in output samples.
 	double latency() const;
 
-private:
+	// 1x1: public, for the ECO path's mixer-voltage decimator (voice.cpp).
 	struct HalfBand {
 		std::vector<double> taps; // odd-indexed taps of the half-band filter (the even ones are 0 except the centre)
 		// The window's two phases, each 2 * taps.size() samples, doubled for wrap-free reads: the
@@ -31,6 +31,8 @@ private:
 		void reset();
 		double process(double a, double b); // two input samples in, one out
 	};
+
+private:
 	int m_stages = 0;
 	std::vector<HalfBand> m_bands;
 	std::vector<double> m_work;

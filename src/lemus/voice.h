@@ -35,6 +35,12 @@ public:
 	Voice();
 	~Voice();
 	void prepare(double hostRate);
+	// 1x1: ECO runs the filter section and the jack board at half the internal rate (2x the host
+	// below 50 kHz) while the oscillator section stays at the full rate (the same aliasing); the
+	// source mixer's voltage is decimated to the filter's rate by a half-band. Takes effect at
+	// prepare().
+	void setEco(bool eco);
+	bool eco() const;
 	void reset();
 	void setControls(const Controls &c);
 	const Controls &controls() const;
@@ -79,6 +85,7 @@ public:
 	struct Impl;
 
 private:
+	void updateProbe();
 	std::unique_ptr<Impl> m;
 };
 

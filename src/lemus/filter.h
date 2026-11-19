@@ -70,6 +70,12 @@ public:
 	double tickEnv(const ModFrame &mod);
 	// The VCF, VCA and output stage, one internal sample. Returns the OUTPUT jack in volts.
 	double tick(const OscFrame &osc);
+	// 1x1 (ECO): the same with the source mixer already one Thevenin source (mixV absolute volts,
+	// mixR ohms), decimated by the caller from the oscillator's rate.
+	double tick(const OscFrame &osc, double mixV, double mixR);
+	// 1x1 (ECO): the circuit noise's RMS against kNoiseVolts, so its density stays the same at a
+	// lower internal rate (sqrt(rate / 4x rate)).
+	void setNoiseScale(double k);
 
 	double vcfHz() const; // probes: the stages' pole frequency
 	double env() const;   // ENV, 0-1 of its swing

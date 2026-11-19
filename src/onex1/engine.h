@@ -24,12 +24,14 @@ public:
 	sh101::Range range = sh101::Range::Ft8;
 	sh101::Transpose transpose = sh101::Transpose::Mid;
 	bool idleSleep = true;
+	bool eco = false; // filter section at 2x (sh101::Voice::setEco), applied at prepare()
 
 	void prepare(double rate, int maxBlock)
 	{
 		m_rate = rate;
 		m_voice.setCalibration(sh101::Calibration::realUnit());
 		m_voice.setControls(m_controls);
+		m_voice.setEco(eco);
 		m_voice.prepare(rate);
 		m_voice.settlePower(); // a unit switched on long ago: no power-on mute
 		m_lfo.prepare(rate);

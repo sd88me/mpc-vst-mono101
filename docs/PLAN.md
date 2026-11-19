@@ -31,6 +31,27 @@ Newton solve is ~60%. Then JackBoard::solve 4%, Bender 3.5%, BA662 controlCurren
 tick 3% each, EnvGen 2.7%, Portamento 2.5%, half-band decimators ~2.5%, Noise::gauss 1.6%. Everything runs at
 4x (176.4 kHz).
 
+## Speed work log
+Live III A55 (core 2), playing-workload mean, one timing pass; arm64 / armhf (the Gen1 build runs on the Live III's AArch32).
+
+| Step | arm64 | armhf | Sound against the goldens |
+|---|---|---|---|
+| Unmodified Lemus | 83.9% | 97.9% | (golden) |
+| Inline exp/expm1/tanh/log1p | 81.0% | 89.1% | worst -121 dBFS, LSD 0.000 dB |
+| Inline log, tan(w)/w, asinh, cbrt | 82.8% | 87.3% | the same |
+| ECO (filter section + jack board at 2x, VCO at 4x), optional | 58.0% | 60.8% | LSD mean 0.02-0.05 dB on plain playing; 0.31-0.35 dB self-oscillating |
+
+Findings:
+- Lemus already did a CPU round on this voice (sh101 docs/improvements.md, 2026-11-14): its VCF Newton mostly takes
+  one iteration a sample. The remaining cost is the arithmetic per iteration and the 4x rate.
+- The p99 spikes (automation) are self-oscillation: blocks with the VCF pole at 15-30 kHz take about twice the
+  iterations of those under 5 kHz; no retries. ECO makes them worse (A55 automation p99 248% -> 268%).
+- ECO's pitch: plain notes within 0.02 cents; a self-oscillating filter on its own within 2.5 cents
+  (`vtest selfosc`), but self-oscillation driven by the pulse (longrun-resmax) 3.6-5 cents sharp at 4.5-8 kHz,
+  +0.04-0.11 dB. Probably the pulse's content above 44 kHz, which HQ keeps and ECO decimates away, intermodulating
+  in the OTAs: real behaviour, no simple prewarp fix. Note starts differ by up to 1 dB in the first frame (the
+  mixer half-band's 65 us against the ENV).
+
 ## Next
 1. Force numbers (armhf `vtest-arm32`; FORCE unreachable today). Expect well over 100% of a core, as the 303 was.
 2. Speed work, one commit per step, `vtest check golden` after each (target: the 303's HQ/ECO budget,
