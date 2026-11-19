@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build 1x1 with the MPC Plugin SDK: native test build + arm32 + arm64, into build/sd88me - VST - 1x1/.
+# Build Mono-101 with the MPC Plugin SDK: native test build + arm32 + arm64, into build/sd88me - VST - Mono-101/.
 #   ./build-sdk.sh          build
 #   ./build-sdk.sh test     build, check params.lock, run the SDK's host simulator test
-#   ./build-sdk.sh beta     a "1x1 Beta" (uid S1xB) build that installs next to the release
+#   ./build-sdk.sh beta     a "Mono-101 Beta" (uid M10B) build that installs next to the release
 # MPC_SDK: the SDK checkout (default: mpc-vst-plugins' vendored copy).
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -25,13 +25,13 @@ if [ "${1:-}" = beta ]; then
   python3 - "$here/plugin.json" "$stage/plugin.json" <<'PY'
 import json, sys
 m = json.load(open(sys.argv[1]))
-m.update(name="1x1 Beta", uid="S1xB", file32="VST/onex1beta-arm32.so", file64="VST/onex1beta-arm64.so")
+m.update(name="Mono-101 Beta", uid="M10B", file32="VST/mono101beta-arm32.so", file64="VST/mono101beta-arm64.so")
 json.dump(m, open(sys.argv[2], "w"), indent=2)
 PY
-  python3 "$SDK/tools/build.py" "$stage" --define 'ONEX1_NAME="1x1 Beta"' --define "ONEX1_UID='S','1','x','B'"
+  python3 "$SDK/tools/build.py" "$stage" --define 'ONEX1_NAME="Mono-101 Beta"' --define "ONEX1_UID='M','1','0','B'"
   exit
 fi
 python3 "$SDK/tools/build.py" "$here"
 if [ "${1:-}" = test ]; then
-  "$SDK/.sdk-tools/host_sim" "$here/build/native/1x1.so" test --notes 48,55,60 --wav "$here/build/test.wav"
+  "$SDK/.sdk-tools/host_sim" "$here/build/native/mono-101.so" test --notes 48,55,60 --wav "$here/build/test.wav"
 fi

@@ -1,4 +1,4 @@
-# 1x1: plan and status
+# Mono-101 (working name 1x1): plan and status
 
 1x1 (working name) is the Lemus SH-101 synth board as an MPC plugin: the voice only. No CPU board, firmware,
 sequencer or arpeggio, and no ROM: MIDI drives the board through Lemus's own voice mode (`src/lemus/voice_keys.h`).

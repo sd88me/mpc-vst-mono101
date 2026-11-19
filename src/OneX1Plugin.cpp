@@ -1,4 +1,4 @@
-// 1x1: the Lemus SH-101 synth board as an MPC instrument (Akai MPC Plugin SDK). The voice only:
+// Mono-101 (working name 1x1): the Lemus SH-101 synth board as an MPC instrument (Akai MPC Plugin SDK). The voice only:
 // MIDI drives the board through Lemus's voice mode (src/onex1/engine.h); no CPU board, firmware,
 // sequencer or arpeggio, and no ROM.
 //
@@ -17,10 +17,10 @@
 #endif
 
 #ifndef ONEX1_NAME
-#define ONEX1_NAME "1x1"
+#define ONEX1_NAME "Mono-101"
 #endif
 #ifndef ONEX1_UID
-#define ONEX1_UID 'S', '1', 'x', '1'
+#define ONEX1_UID 'M', '1', '0', '1'
 #endif
 
 namespace {
