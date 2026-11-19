@@ -26,7 +26,13 @@ if len(ids) > len(lock):
     sys.exit("params.lock: new parameters %s: append them to params.lock" % ids[len(lock):])
 PY
 python3 "$here/tools/gen_presets.py"
-python3 "$here/tools/make_tui.py"
+# The skin is redrawn when its fonts are here; they are not in the repository (tools/fonts/FONTS.md), so without them the
+# committed skins/ are used as they are.
+if [ -f "$here/tools/fonts/Univers_53_Extended_Regular.otf" ] && [ -f "$here/tools/fonts/Earth_Normal.ttf" ]; then
+  python3 "$here/tools/make_tui.py"
+else
+  echo "skin: fonts not found (tools/fonts/FONTS.md): using the committed skins/"
+fi
 if [ "${1:-}" = beta ]; then
   stage="$here/build/beta-project"; rm -rf "$stage"; mkdir -p "$stage"
   ln -s "$here/src" "$stage/src"; [ -d "$here/skins" ] && ln -s "$here/skins" "$stage/skins"

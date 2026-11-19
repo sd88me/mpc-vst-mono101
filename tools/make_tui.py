@@ -32,6 +32,10 @@ FONT_FILE = os.path.join(FONTS, "Univers_53_Extended_Regular.otf")   # our Rolan
 CAP_RATIO = 0.722           # Univers 53: cap height / em
 BOLDEN = 0.07               # its one weight, emboldened by a stroke of this much of the cap height
 LOGO_FILE = os.path.join(FONTS, "Earth_Normal.ttf")
+for _f in (FONT_FILE, LOGO_FILE):
+    if not os.path.exists(_f):
+        sys.exit("make_tui.py: %s is missing: the skin's fonts are not in the repository, see tools/fonts/FONTS.md "
+                 "(the committed skins/ are already drawn)" % os.path.relpath(_f, ROOT))
 LABEL_FONT = "Titillium Web"   # the value labels: drawn by the MPC
 GESTURE = "Instant"
 DEVICE_TEXT = 0.64          # the MPC draws a Label's font at about this fraction of its height

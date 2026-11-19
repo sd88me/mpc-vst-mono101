@@ -2,4 +2,7 @@ tools/voicetest/vtest
 tools/voicetest/vtest-arm32
 tools/voicetest/vtest-arm64
 build/
-build/
+tools/__pycache__/
+# the skin's licensed fonts: not distributed (tools/fonts/FONTS.md)
+tools/fonts/Univers_53_Extended_Regular.otf
+tools/fonts/Earth_Normal.ttf

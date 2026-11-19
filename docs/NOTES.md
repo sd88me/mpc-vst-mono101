@@ -1,9 +1,9 @@
-# Mono-101 (working name 1x1): plan and status
+# Mono-101: development notes
 
-1x1 (working name) is the Lemus SH-101 synth board as an MPC plugin: the voice only. No CPU board, firmware,
-sequencer or arpeggio, and no ROM: MIDI drives the board through Lemus's own voice mode (`src/lemus/voice_keys.h`).
-Same route as Acid-303 (Lemus TB-303): vendor unmodified, golden renders from the original, then speed work
-commit by commit, each checked against the goldens. Build: the Akai SDK route (docs/SDK-PORTING.md in mpc-vst-plugins).
+Mono-101 is the Lemus SH-101 synth board as an MPC plugin: the voice only. No CPU board, firmware, sequencer or
+arpeggio, and no ROM: MIDI drives the board through Lemus's own voice mode (`src/lemus/voice_keys.h`). The route:
+vendor the code unmodified, render golden references from it, then change it commit by commit, each checked against
+the goldens. (The code's internal names, `1x1` / `onex1`, are the working name.)
 
 ## Layout
 - `src/lemus/`: Lemus `machines/sh101/core` at 7575df4 minus `mcs48.*`, `machine.*`, `midi.h` (VENDORED.md).
@@ -52,32 +52,19 @@ Findings:
   in the OTAs: real behaviour, no simple prewarp fix. Note starts differ by up to 1 dB in the first frame (the
   mixer half-band's 65 us against the ENV).
 
-## Plugin (2026-11-19)
-`src/OneX1Plugin.cpp` (SDK `mpc::Plugin`), 31 parameters frozen in `params.lock` (the panel's 30 + QUALITY), plugin.json
-uid `S1x1`, beta `1x1 Beta` / `S1xB` (`./build-sdk.sh beta`). `./build-sdk.sh test`: host_sim 19 passed. Skin
-(`tools/make_tui.py`): Lemus's own panel (`tools/panel/panel.json`, drawn as Lemus's HardwareView draws it), three tabs
-that each show a slice at true proportions (MOD/VCO, MIX/VCF, VCA/ENV with the lower left panel); sliders at 51 frames
-(0.2 steps), switches as N-frame strips plus tap-the-legend radio zones, QUALITY in the bender lever's place. Beta
-staged on the Live III's /nvme/VST2 Plugins (acvs not restarted yet).
-Extras over Lemus's voice mode: RANDOM steps on each MODULATOR clock (the firmware's job), QUALITY.
+## Plugin
 
-Plugin next: device check of the skin (drag feel, legend tap zones, Q-Link blocks; VCA/ENV's two left blocks overlap), +FAV favourites with the naming
-keyboard, Lemus's SH-01A MIDI CC map, Live III fast-core pinning, CPU check inside MPC.
+`src/OneX1Plugin.cpp` (SDK `mpc::Plugin`); parameter order frozen in `params.lock` (append only). `./build-sdk.sh test`
+runs the parameter-lock check and the SDK's host simulator.
 
-## Next
-1. Force numbers (armhf `vtest-arm32`; FORCE unreachable today). Expect well over 100% of a core, as the 303 was.
-2. Speed work, one commit per step, `vtest check golden` after each (target: the 303's HQ/ECO budget,
-   at most ~0.05 dB mean spectral change):
-   - IR3109 Newton: stop at an inaudible residual, better starting guess, analytic slopes, the `buffer()` tanh
-     pairs as NEON vectors, fast inline exp/tanh (from Acid-303's `src/lemus/`).
-   - Automation p99 spikes: find what a control change recomputes per block.
-   - Adaptive control rate for ENV / portamento / bender / jack board once settled.
-   - ECO: VCF/VCA at 2x with the VCO kept at 4x (the 303's split), resonance prewarp.
-   - Cheaper gauss noise, skip silent mixer sources.
-   - aarch64: flush denormals in render (the 303 needed it).
-3. SDK plugin (`src/OneX1Plugin.cpp`, plugin.json, params.lock, skin) once the voice fits; Gen2 first if Gen1
-   can't make it.
-4. Name: "1x1" is a placeholder.
-
-Not in 1x1: the firmware's RANDOM modulator step (voice mode holds RANDOM still); we could step it ourselves
-on each MODULATOR clock later.
+- **Skin** (`tools/make_tui.py`): three tabs (VCO, VCF, BENT) under a header with the preset buttons, drawn from Lemus's
+  measured panel (`tools/panel/panel.json`) and lit as the other ports' realistic skins. Sliders are film strips dragged
+  vertically; switches are film strips of their positions with a tap target on each position's legend; rotaries also
+  drag. The naming keyboard is shown over the tab while `kb_open` is 1.
+- **Presets:** Init, the manual's 40 and Mono-101's 15 (`tools/presets/*.json` -> `tools/gen_presets.py` ->
+  `src/onex1/presets_factory.h`), then 32 user presets in `mono101-presets.txt` (plain text, by parameter id).
+- **Circuit Bent:** OVERDRIVE, PWM SOURCE, VCF FM, LFO RANGE / KEY TRIG (after the circuitbenders package), TRI VCO
+  (the CEM3340's triangle as a fifth mixer source) and LFO SYNC (rate from the host tempo, a CLK RST on each division
+  of the song position). Each is off at zero; CIRCUIT's PURE bypasses them all. `Lfo::hz()` reads 0.82 % slow against
+  the simulated circuit at every rate, so SYNC corrects for it.
+- **Extras over Lemus's voice mode:** RANDOM steps on each MODULATOR clock (the firmware's job), QUALITY.
