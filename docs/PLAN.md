@@ -58,7 +58,7 @@ uid `S1x1`, beta `1x1 Beta` / `S1xB` (`./build-sdk.sh beta`). `./build-sdk.sh te
 generated default for now. Beta copied to the Live III's /nvme/VST2 Plugins (acvs not restarted yet).
 Extras over Lemus's voice mode: RANDOM steps on each MODULATOR clock (the firmware's job), QUALITY.
 
-Plugin next: native skin (the panel's sliders as faders, drawn from code), Q-Links, +FAV favourites with the naming
+Plugin next: device check of the skin (fader film strips at 61 frames), +FAV favourites with the naming
 keyboard, Lemus's SH-01A MIDI CC map, Live III fast-core pinning, CPU check inside MPC.
 
 ## Next
