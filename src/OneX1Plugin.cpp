@@ -4,7 +4,8 @@
 //
 // Parameter order is frozen in params.lock (index = VST parameter = skin binding): append only.
 //
-// Presets (as OTTmpc / Profit-5): the MPC's PRESET menu lists "Init", then 32 user presets "U01 ..". SAVE PRESET opens the drawn
+// Presets (as OTTmpc / Profit-5): the MPC's PRESET menu lists "Init", the factory presets (src/onex1/presets_factory.h: the
+// SH-101 Owner's Manual's 40 sample sounds, then Mono-101's own), then 32 user presets "U01 ..". SAVE PRESET opens the drawn
 // naming keyboard (kb_open = 1) on the picked preset's name and takes the sound as it is then; SAVE stores it in the first free slot,
 // DELETE PRESET empties the picked user preset. Kept in <plugin folder>/mono101-presets.txt, shared by every project. A preset holds
 // every synth parameter but QUALITY. The host re-picks the saved program after a project load: ignored for 2 s after a state load,
@@ -13,6 +14,7 @@
 #include "mpc_plugin.h"
 
 #include "onex1/engine.h"
+#include "onex1/presets_factory.h"
 
 #include <atomic>
 #include <algorithm>
@@ -94,7 +96,7 @@ constexpr char kKbChars[] = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM-";
 constexpr int kKbCount = int(sizeof kKbChars - 1) + 5;
 constexpr int kNumParams = kKbFirst + kKbCount;
 constexpr int kFavSlots = 32, kFavNameMax = 20; // the MPC shows 24 characters of a program name; "U01 " takes 4
-constexpr int kNumFactory = 1;                  // Init
+constexpr int kNumFactory = 1 + onex1::kNumFactoryPresets; // Init, the manual's 40, Mono-101's own
 
 long long nowMs()
 {
@@ -206,10 +208,18 @@ public:
 			local(mpc::intParam(ids[k].c_str(), names[k].c_str(), 0, 1, 0));
 		}
 		addProgram("Init", {});
+		for (int i = 0; i < onex1::kNumFactoryPresets; ++i)
+			addProgram(onex1::kFactoryPresets[i].name, {});
 		for (int i = 0; i < kFavSlots; ++i)
 			addProgram("", {});
 		for (int i = 0; i < kNumSynth; ++i)
 			defaults_.push_back(get(i));
+		for (int i = 0; i < onex1::kNumFactoryPresets; ++i) {
+			std::vector<float> v = defaults_;
+			std::string body = onex1::kFactoryPresets[i].values;
+			parseValues(&body[0], v);
+			factory_.push_back(v);
+		}
 		favFile_ = mpc::detail::computePluginFolder() + "/mono101-presets.txt";
 		loadFavs();
 		worker_ = std::thread(&OneX1Plugin::workerMain, this);
@@ -285,8 +295,10 @@ public:
 			return;
 		}
 		std::vector<float> vals;
-		if (prog < kNumFactory)
+		if (prog == 0)
 			vals = defaults_;
+		else if (prog < kNumFactory)
+			vals = factory_[size_t(prog - 1)];
 		else {
 			std::lock_guard<std::mutex> g(favMu_);
 			const Fav &f = favs_[size_t(prog - kNumFactory)];
@@ -507,18 +519,7 @@ private:
 				Fav v;
 				v.name.assign(t1 + 1, std::min(std::strlen(t1 + 1), size_t(kFavNameMax)));
 				v.values = defaults_;
-				char *save = nullptr;
-				for (char *tok = strtok_r(t2 + 1, " ", &save); tok; tok = strtok_r(nullptr, " ", &save)) {
-					char *eq = std::strchr(tok, '=');
-					if (!eq)
-						continue;
-					*eq = 0;
-					for (int i = 0; i < kNumSynth; ++i)
-						if (!std::strcmp(tok, param(i).id.c_str())) {
-							const float x = float(std::atof(eq + 1));
-							v.values[size_t(i)] = std::min(std::max(x, param(i).min), param(i).max);
-						}
-				}
+				parseValues(t2 + 1, v.values);
 				v.used = true;
 				favs_[size_t(slot)] = v;
 			}
@@ -560,6 +561,23 @@ private:
 			std::remove(tmp.c_str());
 	}
 
+	// "id=value ..." (plain values) into v; unknown ids are skipped. Modifies text.
+	void parseValues(char *text, std::vector<float> &v)
+	{
+		char *save = nullptr;
+		for (char *tok = strtok_r(text, " ", &save); tok; tok = strtok_r(nullptr, " ", &save)) {
+			char *eq = std::strchr(tok, '=');
+			if (!eq)
+				continue;
+			*eq = 0;
+			for (int i = 0; i < kNumSynth; ++i)
+				if (!std::strcmp(tok, param(i).id.c_str())) {
+					const float x = float(std::atof(eq + 1));
+					v[size_t(i)] = std::min(std::max(x, param(i).min), param(i).max);
+				}
+		}
+	}
+
 	void nameProgram(int i) // favMu_ held
 	{
 		char b[8];
@@ -570,8 +588,10 @@ private:
 	std::string currentName() // the picked preset's name, without the "U01 " prefix
 	{
 		const int p = currentProgram_;
-		if (p >= 0 && p < kNumFactory)
+		if (p == 0)
 			return "Init";
+		if (p > 0 && p < kNumFactory)
+			return onex1::kFactoryPresets[p - 1].name;
 		std::lock_guard<std::mutex> g(favMu_);
 		if (p >= kNumFactory && p < kNumFactory + kFavSlots && favs_[size_t(p - kNumFactory)].used)
 			return favs_[size_t(p - kNumFactory)].name;
@@ -706,6 +726,7 @@ private:
 	}
 
 	std::vector<float> defaults_; // the parameters' defaults: Init
+	std::vector<std::vector<float>> factory_; // the factory presets, over Init
 	std::string favFile_;
 	std::mutex favMu_;
 	std::vector<Fav> favs_;

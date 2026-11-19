@@ -25,6 +25,7 @@ if ids[:len(lock)] != lock:
 if len(ids) > len(lock):
     sys.exit("params.lock: new parameters %s: append them to params.lock" % ids[len(lock):])
 PY
+python3 "$here/tools/gen_presets.py"
 python3 "$here/tools/make_tui.py"
 if [ "${1:-}" = beta ]; then
   stage="$here/build/beta-project"; rm -rf "$stage"; mkdir -p "$stage"
