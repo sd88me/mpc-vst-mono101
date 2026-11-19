@@ -727,6 +727,7 @@ def keyboard(p):
 class Page:
     def __init__(self, name, fn):
         self.name, self.fn, self.kids, self.extent, self.qrows = name, fn, [], {}, []
+        self.ink = {}   # a rotary's printed legends, left and right (px)
         self.p = Painter(W, H, 0, 0, 1.0)
         pc = C["panel"]
         self.p.box([0, 0, W, H], None, grad=(brighter(pc, 0.06), (0, 0), darker(pc, 0.04), (0, H)))
@@ -801,19 +802,30 @@ class Page:
         n = len(opts)
         det = ROT_DETENTS[n]
         r = ROT_R
+        ink = [cx, cx]   # the printed legends' left and right
         for i, (o, a) in enumerate(zip(opts, det)):
             printed(self.p, lambda q, a=a: q.line([polar(cx, cy, r + 6, a), polar(cx, cy, r + 12, a)], 2.4, INK))
             lx, ly = polar(cx, cy, r + 26, a)
+            tw = text_width(o, 10 if n > 4 else 11)
             if glyphs:
                 printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 20, 11))
+                ext = (lx - 10, lx + 10)
             elif abs(a) > 60:   # the low positions: legends beside the knob, reading away from it
-                legend(self.p, o, lx + (8 if a > 0 else -8), ly, 10, align="l" if a > 0 else "r")
+                x = lx + (8 if a > 0 else -8)
+                legend(self.p, o, x, ly, 10, align="l" if a > 0 else "r")
+                ext = (x, x + tw) if a > 0 else (x - tw, x)
             elif n > 4 and abs(a) < 5:   # straight up: centred
                 legend(self.p, o, lx, ly - 4, 10)
+                ext = (lx - tw / 2, lx + tw / 2)
             elif n > 4:         # the upper ones: reading away from the top
-                legend(self.p, o, lx + (-8 if a > 0 else 8), ly, 10, align="l" if a > 0 else "r")
+                x = lx + (-8 if a > 0 else 8)
+                legend(self.p, o, x, ly, 10, align="l" if a > 0 else "r")
+                ext = (x, x + tw) if a > 0 else (x - tw, x)
             else:
                 legend(self.p, o, lx, ly, 11)
+                ext = (lx - tw / 2, lx + tw / 2)
+            ink = [min(ink[0], ext[0]), max(ink[1], ext[1])]
+        self.ink[key] = ink
         m = r / KNOB_MM
         bx = [int(cx - r - 4), int(cy - r - 4), int(2 * r + 12), int(2 * r + 14)]
         base = Painter(bx[2], bx[3], bx[0] / m, bx[1] / m, m)
@@ -1017,8 +1029,8 @@ def page_two():
     return finish(p)
 
 
-BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 516), ("OVERDRIVE", 516, 656), ("VCF FM", 656, 906),
-        ("LFO", 906, 1264)]
+BENT = [("CIRCUIT", 16, 126), ("PWM SOURCE", 126, 376), ("TRI VCO", 376, 516), ("OVERDRIVE", 516, 656), ("VCF FM", 656, 936),
+        ("LFO", 936, 1264)]
 
 
 def page_three():
@@ -1030,7 +1042,7 @@ def page_three():
     sections(p.p, BENT, Y0, Y1, head=HEAD, cap=15)
     mid = lambda name: [(a + b) / 2 for t, a, b in BENT if t == name][0]
     p.vswitch("mods", 42, TOP + 10, cap=10, order=[1, 0])        # BENT at the top
-    c = mid("PWM SOURCE")
+    c = mid("PWM SOURCE") - 10    # its legends reach further right than left
     p.caption(c, TOP - 20, "SOURCE")
     p.rotary("pwm_mod_source", c, TOP + 130)
     c = mid("TRI VCO")
@@ -1039,11 +1051,11 @@ def page_three():
     c = mid("OVERDRIVE")
     p.caption(c, TOP - 20, "DRIVE")
     p.fader("drive", c, TOP, "orange", h=FH, numbers=(True, True))
-    c = mid("VCF FM")              # AMOUNT on top, SOURCE under it
+    c = mid("VCF FM")              # AMOUNT on top, SOURCE under it (its legends reach further right: 10 px left)
     p.caption(c, TOP - 20, "AMOUNT")
     p.fader("fm_amount", c, TOP, "orange", h=FH, numbers=(True, True))
-    p.caption(c, SY, "SOURCE", 10)
-    p.rotary("fm_source", c, ROT_Y)
+    p.caption(c - 10, SY, "SOURCE", 10)
+    p.rotary("fm_source", c - 10, ROT_Y)
     c = mid("LFO")
     p.caption(c, TOP - 20, "RANGE", 10)
     p.hswitch("lfo_range", c, TOP + 44, pitch=66)
@@ -1053,6 +1065,10 @@ def page_three():
     p.hswitch("lfo_trig", c - 88, SW_Y, pitch=46)
     p.caption(c + 88, SY, "SYNC", 10)
     p.hswitch("lfo_sync", c + 88, SW_Y, pitch=46)
+    for key, sec in (("pwm_mod_source", "PWM SOURCE"), ("fm_source", "VCF FM")):   # a rotary's legends stay inside its column
+        a, b = [(x0, x1) for t, x0, x1 in BENT if t == sec][0]
+        e = p.ink[key]
+        assert a + 6 <= e[0] and e[1] <= b - 6, "%s: legends cross the column (%d..%d in %d..%d)" % (key, e[0], e[1], a, b)
     p.qrows = [["mods", "pwm_mod_source", "tri_level", "drive"], ["fm_amount", "fm_source"],
                ["lfo_div", "lfo_range", "lfo_sync", "lfo_trig"]]
     return finish(p)
