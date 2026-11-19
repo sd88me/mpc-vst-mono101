@@ -13,6 +13,12 @@ python3 - "$here" <<'PY'
 import re, sys
 src = open(sys.argv[1] + "/src/OneX1Plugin.cpp").read()
 ids = re.findall(r'(?:slider|Param)\("([a-z0-9_]+)"', src)
+# the naming keyboard's keys are made in a loop from kKbChars: kb_<char> (kb_dash), then the five named keys
+chars = re.search(r'kKbChars\[\] = "([^"]+)"', src)
+if chars and "kb_open" in ids:
+    at = ids.index("kb_open") + 1
+    ids[at:at] = [("kb_dash" if c == "-" else "kb_" + c.lower()) for c in chars.group(1)] + \
+                 ["kb_space", "kb_bksp", "kb_shift", "kb_cancel", "kb_save"]
 lock = open(sys.argv[1] + "/params.lock").read().split()
 if ids[:len(lock)] != lock:
     sys.exit("params.lock: the parameter order changed (append only)\n  lock: %s\n  src:  %s" % (lock, ids))
