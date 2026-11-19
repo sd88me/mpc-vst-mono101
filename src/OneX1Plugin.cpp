@@ -67,6 +67,7 @@ enum ParamIndex {
 	kFmAmount,
 	kLfoRange,
 	kLfoTrig,
+	kModsMaster, // PURE: every mod bypassed, whatever its own switch says
 	kNumParams
 };
 
@@ -148,6 +149,7 @@ public:
 		slider("fm_amount", "VCF FM Amount", 0.3f);
 		addParam(mpc::choiceParam("lfo_range", "LFO Range Mod", {"Slow", "Normal", "Fast"}, 1));
 		addParam(mpc::choiceParam("lfo_trig", "LFO Key Trig Mod", {"Off", "On"}, 0));
+		addParam(mpc::choiceParam("mods", "Mods", {"Pure", "Modded"}, 1));
 	}
 
 	void prepare(double sampleRate, int maxBlockSize) override
@@ -258,6 +260,8 @@ private:
 		c.bendVcf = s(kBendVcf);
 		c.lfoModDepth = s(kBendLfo);
 		// The mods: overdrive 1x..8x, the LFO's C9 switched (kLfoScale).
+		if (getInt(kModsMaster) == 0)
+			return c; // PURE: the stock board
 		auto &m = c.mods;
 		m.drive = getInt(kDriveOn) ? 1.0 + 7.0 * s(kDrive) : 1.0;
 		m.pwmSource = getInt(kPwmModOn) ? sh101::ModPwmSource(getInt(kPwmModSource)) : sh101::ModPwmSource::Stock;

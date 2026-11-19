@@ -170,7 +170,7 @@
           }
         },
         {
-          "key": "ctl_porta_mode",
+          "key": "ctl_sw_porta_mode",
           "value": {
             "version": 2,
             "actions": [
@@ -248,7 +248,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "porta_mode.png",
+                    "filmStrip": "sw_porta_mode.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -374,7 +374,7 @@
           }
         },
         {
-          "key": "ctl_transpose",
+          "key": "ctl_sw_transpose",
           "value": {
             "version": 2,
             "actions": [
@@ -452,7 +452,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "transpose.png",
+                    "filmStrip": "sw_transpose.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -578,7 +578,7 @@
           }
         },
         {
-          "key": "ctl_lfo_wave",
+          "key": "ctl_sw_lfo_wave",
           "value": {
             "version": 2,
             "actions": [
@@ -656,7 +656,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "lfo_wave.png",
+                    "filmStrip": "sw_lfo_wave.png",
                     "numFrames": 4,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -680,7 +680,7 @@
           }
         },
         {
-          "key": "ctl_range",
+          "key": "ctl_sw_range",
           "value": {
             "version": 2,
             "actions": [
@@ -758,7 +758,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "range.png",
+                    "filmStrip": "sw_range.png",
                     "numFrames": 4,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -782,7 +782,7 @@
           }
         },
         {
-          "key": "ctl_pwm_source",
+          "key": "ctl_sw_pwm_source",
           "value": {
             "version": 2,
             "actions": [
@@ -860,7 +860,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "pwm_source.png",
+                    "filmStrip": "sw_pwm_source.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -884,7 +884,7 @@
           }
         },
         {
-          "key": "ctl_sub_mode",
+          "key": "ctl_sw_sub_mode",
           "value": {
             "version": 2,
             "actions": [
@@ -962,7 +962,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "sub_mode.png",
+                    "filmStrip": "sw_sub_mode.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -986,7 +986,7 @@
           }
         },
         {
-          "key": "ctl_env_trigger",
+          "key": "ctl_sw_env_trigger",
           "value": {
             "version": 2,
             "actions": [
@@ -1064,7 +1064,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "env_trigger.png",
+                    "filmStrip": "sw_env_trigger.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1088,7 +1088,7 @@
           }
         },
         {
-          "key": "ctl_vca_mode",
+          "key": "ctl_sw_vca_mode",
           "value": {
             "version": 2,
             "actions": [
@@ -1166,7 +1166,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "vca_mode.png",
+                    "filmStrip": "sw_vca_mode.png",
                     "numFrames": 2,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1190,7 +1190,7 @@
           }
         },
         {
-          "key": "ctl_quality",
+          "key": "ctl_sw_quality",
           "value": {
             "version": 2,
             "actions": [
@@ -1268,7 +1268,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "quality.png",
+                    "filmStrip": "sw_quality.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1292,7 +1292,7 @@
           }
         },
         {
-          "key": "ctl_drive_on",
+          "key": "ctl_sw_mods",
           "value": {
             "version": 2,
             "actions": [
@@ -1370,7 +1370,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "drive_on.png",
+                    "filmStrip": "sw_mods.png",
                     "numFrames": 2,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1394,7 +1394,7 @@
           }
         },
         {
-          "key": "ctl_pwm_mod_on",
+          "key": "ctl_sw_drive_on",
           "value": {
             "version": 2,
             "actions": [
@@ -1472,7 +1472,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "pwm_mod_on.png",
+                    "filmStrip": "sw_drive_on.png",
                     "numFrames": 2,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1496,7 +1496,109 @@
           }
         },
         {
-          "key": "ctl_pwm_mod_source",
+          "key": "ctl_sw_pwm_mod_on",
+          "value": {
+            "version": 2,
+            "actions": [
+              {
+                "version": 1,
+                "onAction": "Mouse Down",
+                "handler": "Q-Link",
+                "handleName": "Data",
+                "additionalData": ""
+              },
+              {
+                "version": 1,
+                "onAction": "Double Click",
+                "handler": "Show Overlay",
+                "handleName": "Data",
+                "additionalData": "knob overlay"
+              },
+              {
+                "version": 1,
+                "onAction": "Enter Pressed",
+                "handler": "Show Overlay",
+                "handleName": "Data",
+                "additionalData": "knob overlay"
+              }
+            ],
+            "backgroundData": {
+              "version": 1,
+              "focussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              },
+              "unfocussed": {
+                "version": 1,
+                "colour": "0",
+                "image": ""
+              }
+            },
+            "ignoreMousePresses": false,
+            "disableCoarseDataWheel": false,
+            "componentsData": [
+              {
+                "version": 2,
+                "componentData": {
+                  "version": 1,
+                  "name": "focus",
+                  "type": "Focus",
+                  "data": {
+                    "version": 1,
+                    "backgroundColour": "00000000",
+                    "outlineColour": "fff08a2e",
+                    "backgroundInset": 4.0,
+                    "outlineThickness": 2.0
+                  }
+                },
+                "handle remapping": {
+                  "version": 1,
+                  "map": []
+                },
+                "bounds": {
+                  "version": 1,
+                  "acceptsHWFocus": "No",
+                  "showWhenDataModelInvalid": "Show",
+                  "whenVisible": "WhenFocussed",
+                  "boundsType": "Absolute",
+                  "bounds": "-3 -3 54 114"
+                }
+              },
+              {
+                "version": 2,
+                "componentData": {
+                  "version": 1,
+                  "name": "strip",
+                  "type": "Knob",
+                  "data": {
+                    "version": 3,
+                    "knobType": "FilmStrip",
+                    "filmStrip": "sw_pwm_mod_on.png",
+                    "numFrames": 2,
+                    "invert": false,
+                    "dragOrientation": "Vertical",
+                    "handleName": "Data"
+                  }
+                },
+                "handle remapping": {
+                  "version": 1,
+                  "map": []
+                },
+                "bounds": {
+                  "version": 1,
+                  "acceptsHWFocus": "No",
+                  "showWhenDataModelInvalid": "Show",
+                  "whenVisible": "Always",
+                  "boundsType": "Absolute",
+                  "bounds": "0 0 48 108"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "key": "ctl_sw_pwm_mod_source",
           "value": {
             "version": 2,
             "actions": [
@@ -1574,7 +1676,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "pwm_mod_source.png",
+                    "filmStrip": "sw_pwm_mod_source.png",
                     "numFrames": 6,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1598,7 +1700,7 @@
           }
         },
         {
-          "key": "ctl_fm_on",
+          "key": "ctl_sw_fm_on",
           "value": {
             "version": 2,
             "actions": [
@@ -1676,7 +1778,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "fm_on.png",
+                    "filmStrip": "sw_fm_on.png",
                     "numFrames": 2,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1700,7 +1802,7 @@
           }
         },
         {
-          "key": "ctl_fm_source",
+          "key": "ctl_sw_fm_source",
           "value": {
             "version": 2,
             "actions": [
@@ -1778,7 +1880,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "fm_source.png",
+                    "filmStrip": "sw_fm_source.png",
                     "numFrames": 6,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1802,7 +1904,7 @@
           }
         },
         {
-          "key": "ctl_lfo_range",
+          "key": "ctl_sw_lfo_range",
           "value": {
             "version": 2,
             "actions": [
@@ -1880,7 +1982,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "lfo_range.png",
+                    "filmStrip": "sw_lfo_range.png",
                     "numFrames": 3,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -1904,7 +2006,7 @@
           }
         },
         {
-          "key": "ctl_lfo_trig",
+          "key": "ctl_sw_lfo_trig",
           "value": {
             "version": 2,
             "actions": [
@@ -1982,7 +2084,7 @@
                   "data": {
                     "version": 3,
                     "knobType": "FilmStrip",
-                    "filmStrip": "lfo_trig.png",
+                    "filmStrip": "sw_lfo_trig.png",
                     "numFrames": 2,
                     "invert": false,
                     "dragOrientation": "Vertical",
@@ -2137,6 +2239,13 @@
         "value": [
           "OFF",
           "ON"
+        ]
+      },
+      {
+        "key": "Parameter 40",
+        "value": [
+          "PURE",
+          "MODDED"
         ]
       }
     ],
@@ -2413,7 +2522,7 @@
               "componentData": {
                 "version": 1,
                 "name": "porta_mode",
-                "type": "ctl_porta_mode",
+                "type": "ctl_sw_porta_mode",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2757,7 +2866,7 @@
               "componentData": {
                 "version": 1,
                 "name": "transpose",
-                "type": "ctl_transpose",
+                "type": "ctl_sw_transpose",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -2959,7 +3068,7 @@
               "componentData": {
                 "version": 1,
                 "name": "lfo_wave",
-                "type": "ctl_lfo_wave",
+                "type": "ctl_sw_lfo_wave",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -3195,7 +3304,7 @@
               "componentData": {
                 "version": 1,
                 "name": "range",
-                "type": "ctl_range",
+                "type": "ctl_sw_range",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -3431,7 +3540,7 @@
               "componentData": {
                 "version": 1,
                 "name": "pwm_source",
-                "type": "ctl_pwm_source",
+                "type": "ctl_sw_pwm_source",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -4544,7 +4653,7 @@
               "componentData": {
                 "version": 1,
                 "name": "sub_mode",
-                "type": "ctl_sub_mode",
+                "type": "ctl_sw_sub_mode",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -4675,7 +4784,7 @@
               "componentData": {
                 "version": 1,
                 "name": "env_trigger",
-                "type": "ctl_env_trigger",
+                "type": "ctl_sw_env_trigger",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -4806,7 +4915,7 @@
               "componentData": {
                 "version": 1,
                 "name": "vca_mode",
-                "type": "ctl_vca_mode",
+                "type": "ctl_sw_vca_mode",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -4903,7 +5012,7 @@
               "componentData": {
                 "version": 1,
                 "name": "quality",
-                "type": "ctl_quality",
+                "type": "ctl_sw_quality",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5092,8 +5201,105 @@
               "version": 2,
               "componentData": {
                 "version": 1,
+                "name": "mods",
+                "type": "ctl_sw_mods",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 40"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "19 92 48 108"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "mods 1",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 1,
+                  "numButtonsInGroup": 2,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 40"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "17 101 139 42"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "mods 0",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 0,
+                  "numButtonsInGroup": 2,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 40"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "17 143 139 42"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
                 "name": "drive_on",
-                "type": "ctl_drive_on",
+                "type": "ctl_sw_drive_on",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5114,7 +5320,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "41 92 48 108"
+                "bounds": "175 92 48 108"
               }
             },
             {
@@ -5148,7 +5354,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "39 101 97 42"
+                "bounds": "173 101 97 42"
               }
             },
             {
@@ -5182,7 +5388,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "39 143 97 42"
+                "bounds": "173 143 97 42"
               }
             },
             {
@@ -5211,7 +5417,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "80 324 124 124"
+                "bounds": "200 324 124 124"
               }
             },
             {
@@ -5253,7 +5459,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "86 472 100 27"
+                "bounds": "206 472 100 27"
               }
             },
             {
@@ -5261,7 +5467,7 @@
               "componentData": {
                 "version": 1,
                 "name": "pwm_mod_on",
-                "type": "ctl_pwm_mod_on",
+                "type": "ctl_sw_pwm_mod_on",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5282,7 +5488,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "281 92 48 108"
+                "bounds": "375 92 48 108"
               }
             },
             {
@@ -5316,7 +5522,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "279 101 97 42"
+                "bounds": "373 101 97 42"
               }
             },
             {
@@ -5350,7 +5556,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "279 143 97 42"
+                "bounds": "373 143 97 42"
               }
             },
             {
@@ -5358,7 +5564,7 @@
               "componentData": {
                 "version": 1,
                 "name": "pwm_mod_source",
-                "type": "ctl_pwm_mod_source",
+                "type": "ctl_sw_pwm_mod_source",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5379,7 +5585,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "342 336 92 94"
+                "bounds": "432 336 92 94"
               }
             },
             {
@@ -5413,7 +5619,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "288 398 39 30"
+                "bounds": "378 398 39 30"
               }
             },
             {
@@ -5447,7 +5653,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "272 345 50 30"
+                "bounds": "362 345 50 30"
               }
             },
             {
@@ -5481,7 +5687,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "311 305 58 30"
+                "bounds": "401 305 58 30"
               }
             },
             {
@@ -5515,7 +5721,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "403 305 73 30"
+                "bounds": "493 305 73 30"
               }
             },
             {
@@ -5549,7 +5755,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "451 345 64 30"
+                "bounds": "541 345 64 30"
               }
             },
             {
@@ -5583,7 +5789,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "445 398 64 30"
+                "bounds": "535 398 64 30"
               }
             },
             {
@@ -5591,7 +5797,7 @@
               "componentData": {
                 "version": 1,
                 "name": "fm_on",
-                "type": "ctl_fm_on",
+                "type": "ctl_sw_fm_on",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -5612,7 +5818,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "541 92 48 108"
+                "bounds": "615 92 48 108"
               }
             },
             {
@@ -5646,7 +5852,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "539 101 97 42"
+                "bounds": "613 101 97 42"
               }
             },
             {
@@ -5680,240 +5886,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "539 143 97 42"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source",
-                "type": "ctl_fm_source",
-                "data": {
-                  "version": 1,
-                  "handleName": "Data"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "Yes",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "664 336 92 94"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 0",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 0,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "581 398 68 30"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 1",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 1,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "589 345 54 30"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 2",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 2,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "619 305 72 30"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 3",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 3,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "725 305 72 30"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 4",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 4,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "773 345 83 30"
-              }
-            },
-            {
-              "version": 2,
-              "componentData": {
-                "version": 1,
-                "name": "fm_source 5",
-                "type": "Button",
-                "data": {
-                  "version": 2,
-                  "onImage": "blank.png",
-                  "offImage": "blank.png",
-                  "buttonId": 5,
-                  "numButtonsInGroup": 6,
-                  "handleName": "Data",
-                  "gestureBehaviour": "Instant"
-                }
-              },
-              "handle remapping": {
-                "version": 1,
-                "map": [
-                  {
-                    "key": "Data",
-                    "value": "Parameter 36"
-                  }
-                ]
-              },
-              "bounds": {
-                "version": 1,
-                "acceptsHWFocus": "No",
-                "showWhenDataModelInvalid": "Show",
-                "whenVisible": "Always",
-                "boundsType": "Absolute",
-                "bounds": "767 398 65 30"
+                "bounds": "613 143 97 42"
               }
             },
             {
@@ -5942,7 +5915,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "744 102 124 124"
+                "bounds": "800 102 124 124"
               }
             },
             {
@@ -5984,7 +5957,240 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "750 250 100 27"
+                "bounds": "806 250 100 27"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source",
+                "type": "ctl_sw_fm_source",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "724 336 92 94"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 0",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 0,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "641 398 68 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 1",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 1,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "649 345 54 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 2",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 2,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "679 305 72 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 3",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 3,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "785 305 72 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 4",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 4,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "833 345 83 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "fm_source 5",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "blank.png",
+                  "offImage": "blank.png",
+                  "buttonId": 5,
+                  "numButtonsInGroup": 6,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 36"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "827 398 65 30"
               }
             },
             {
@@ -5992,7 +6198,7 @@
               "componentData": {
                 "version": 1,
                 "name": "lfo_range",
-                "type": "ctl_lfo_range",
+                "type": "ctl_sw_lfo_range",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -6013,7 +6219,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "941 92 48 150"
+                "bounds": "969 92 48 150"
               }
             },
             {
@@ -6047,7 +6253,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "939 101 120 42"
+                "bounds": "967 101 120 42"
               }
             },
             {
@@ -6081,7 +6287,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "939 143 120 42"
+                "bounds": "967 143 120 42"
               }
             },
             {
@@ -6115,7 +6321,7 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "939 185 120 42"
+                "bounds": "967 185 120 42"
               }
             },
             {
@@ -6123,7 +6329,7 @@
               "componentData": {
                 "version": 1,
                 "name": "lfo_trig",
-                "type": "ctl_lfo_trig",
+                "type": "ctl_sw_lfo_trig",
                 "data": {
                   "version": 1,
                   "handleName": "Data"
@@ -6218,10 +6424,10 @@
           ]
         },
         "qlinkBoundsData": [
-          "39 101 173 403",
-          "271 101 243 329",
-          "539 94 337 336",
-          "939 101 284 126"
+          "17 101 315 403",
+          "361 101 243 329",
+          "613 94 319 336",
+          "967 101 256 126"
         ]
       }
     ]

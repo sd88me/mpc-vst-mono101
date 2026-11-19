@@ -7,7 +7,7 @@ Layout: two tabs, the panel split in two so nothing has to shrink.
     VCF      SOURCE MIXER (+ SUB OSC), VCF, VCA (MODE, and QUALITY in its foot), ENV (+ TRIGGER).
 Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions
 with transparent radio buttons over them (tap a position or its legend).
-    MODS     the circuitbenders mods, each with its ON / OFF switch: FILTER OVERDRIVE, PWM SOURCE, VCF FM, LFO RANGE,\n             LFO TRIG (from the keys).\nQ-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; MODS one block per\nmod (LFO RANGE and TRIG together).
+    MODS     ALL MODS (PURE / MODDED), then the circuitbenders mods, each with its ON / OFF switch: FILTER OVERDRIVE, PWM SOURCE, VCF FM, LFO RANGE,\n             LFO TRIG (from the keys).\nQ-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; MODS one block per\nmod (LFO RANGE and TRIG together).
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
@@ -70,7 +70,7 @@ CHOICES = {
     "porta_mode": ["ON", "AUTO", "OFF"], "transpose": ["L", "M", "H"], "quality": ["HQ", "AUTO", "ECO"],
     "drive_on": ["OFF", "ON"], "pwm_mod_on": ["OFF", "ON"], "pwm_mod_source": ["TRI", "SQR", "RND", "NOISE", "SUB 1", "SUB 2"],
     "fm_on": ["OFF", "ON"], "fm_source": ["PULSE", "SAW", "SUB 1", "SUB 2", "SUB PW", "NOISE"], "lfo_range": ["SLOW", "NORM", "FAST"],
-    "lfo_trig": ["OFF", "ON"],
+    "lfo_trig": ["OFF", "ON"], "mods": ["PURE", "MODDED"],
 }
 
 
@@ -693,7 +693,7 @@ class Page:
             legend(self.p, o, cx + SW_W / 2 + 14, y, cap, align="l")
         b = [int(cx - SW_W / 2 - 4), int(top - 4), SW_W + 14, int(bot - top) + 14]
         m = SW_W / SW_MM
-        name = film("%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[order.index(f)] / m, SW_MM - 0.4, SW_H / m))
+        name = film("sw_%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[order.index(f)] / m, SW_MM - 0.4, SW_H / m))
         self.strip(key, name, b, n)
         x0 = cx - SW_W / 2 - 6
         self.zones(key, [(x0, y - SW_PITCH / 2, right - x0, SW_PITCH) for y in ys], ids=order)
@@ -720,7 +720,7 @@ class Page:
         bx = [int(cx - r - 4), int(cy - r - 4), int(2 * r + 12), int(2 * r + 14)]
         base = Painter(bx[2], bx[3], bx[0] / m, bx[1] / m, m)
         knob_body(base, cx / m, cy / m, KNOB_MM)
-        name = film("%s.png" % key, bx[2], bx[3], n, m, bx[0], bx[1],
+        name = film("sw_%s.png" % key, bx[2], bx[3], n, m, bx[0], bx[1],
                     lambda p, f: draw_pointer(p, cx / m, cy / m, KNOB_MM, det[f]), base)
         self.strip(key, name, bx, n)
         if n > 4:   # a tap target on each legend; the knob itself drags
@@ -755,7 +755,7 @@ class Page:
         for i, x in enumerate(xs):
             legend(self.p, opts[order[i]], x, y - hr - 14, cap)
         b = [int(sl[0]) - 2, int(sl[1]) - 2, int(sl[2] - sl[0]) + 8, int(sl[3] - sl[1]) + 8]
-        name = film("%s.png" % key, b[2], b[3], n, 1.0, b[0], b[1], lambda p, f: lever(p, xs[order.index(f)], y, HS_LEVER / 2))
+        name = film("sw_%s.png" % key, b[2], b[3], n, 1.0, b[0], b[1], lambda p, f: lever(p, xs[order.index(f)], y, HS_LEVER / 2))
         self.strip(key, name, b, n)
         top = y - hr - 30
         self.zones(key, [(x - pitch / 2, top, pitch, y + hr + 6 - top) for x in xs], ids=order)
@@ -879,53 +879,61 @@ def page_two():
     return p, p.art()
 
 
-MODS = [("FILTER OVERDRIVE", 16, 256), ("PWM SOURCE", 256, 516), ("VCF FM", 516, 900), ("LFO RANGE", 900, 1082),
-        ("LFO TRIG", 1082, 1264)]
+MODS = [("MODS", 16, 156), ("FILTER OVERDRIVE", 156, 356), ("PWM SOURCE", 356, 596), ("VCF FM", 596, 940),
+        ("LFO RANGE", 940, 1102), ("LFO TRIG", 1102, 1264)]
 
 
 def page_three():
-    """The circuitbenders SH-101 mods, each with its ON / OFF switch (off: the stock board)."""
+    """The circuitbenders SH-101 mods, each with its ON / OFF switch, and the master PURE / MODDED switch: PURE is the
+    stock board whatever the mods' own switches say."""
     p = Page("MODS", 2)
     kstrip = knob_strip("knob.png")
     sections(p.p, MODS, Y0, Y1, cap=15)
     on = [1, 0]                              # ON at the top, as a toggle
     sw_top, knob_y = 96, 380
+    dim = darker(INK, 0.2)
+    # the master switch
+    p.caption(86, sw_top - 20, "ALL MODS", 10)
+    p.vswitch("mods", 40, sw_top, cap=10, order=on)
+    for i, t in enumerate(["PURE: THE STOCK", "SH-101, EVERY", "MOD BYPASSED", "", "MODDED: EACH", "MOD BY ITS OWN", "SWITCH"]):
+        if t:
+            legend(p.p, t, 86, 300 + i * 22, 8, colour=dim, fit=124)
     # FILTER OVERDRIVE: ON / OFF, DRIVE
-    p.caption(76, sw_top - 20, "MOD", 10)
-    p.vswitch("drive_on", 62, sw_top, cap=11, order=on)
-    p.caption(136, knob_y - 76, "DRIVE")
-    p.knob("drive", 136, knob_y, kstrip)
-    legend(p.p, "0", 136 - 62, knob_y + 66, 9)
-    legend(p.p, "10", 136 + 62, knob_y + 66, 9)
-    legend(p.p, "MIXER INTO THE VCF, HARDER", 136, 590, 8, colour=darker(INK, 0.2), fit=220)
+    p.caption(210, sw_top - 20, "MOD", 10)
+    p.vswitch("drive_on", 196, sw_top, cap=11, order=on)
+    p.caption(256, knob_y - 76, "DRIVE")
+    p.knob("drive", 256, knob_y, kstrip)
+    legend(p.p, "0", 256 - 62, knob_y + 66, 9)
+    legend(p.p, "10", 256 + 62, knob_y + 66, 9)
+    legend(p.p, "MIXER INTO THE VCF, HARDER", 256, 590, 8, colour=dim, fit=186)
     # PWM SOURCE: ON / OFF, the source
-    p.caption(316, sw_top - 20, "MOD", 10)
-    p.vswitch("pwm_mod_on", 302, sw_top, cap=11, order=on)
-    p.caption(386, knob_y - 100, "SOURCE")
-    p.rotary("pwm_mod_source", 386, knob_y)
-    legend(p.p, "FOR THE PWM SWITCH'S LFO", 386, 572, 8, colour=darker(INK, 0.2), fit=240)
-    legend(p.p, "POSITION (VCO TAB)", 386, 590, 8, colour=darker(INK, 0.2), fit=240)
-    # VCF FM: ON / OFF, the source, AMOUNT
-    p.caption(576, sw_top - 20, "MOD", 10)
-    p.vswitch("fm_on", 562, sw_top, cap=11, order=on)
-    p.caption(708, knob_y - 100, "SOURCE")
-    p.rotary("fm_source", 708, knob_y)
-    p.caption(800, 84, "AMOUNT")
-    p.knob("fm_amount", 800, 158, kstrip)
-    legend(p.p, "0", 800 - 62, 158 + 66, 9)
-    legend(p.p, "10", 800 + 62, 158 + 66, 9)
-    legend(p.p, "AUDIO-RATE CUTOFF MODULATION", 708, 590, 8, colour=darker(INK, 0.2), fit=360)
+    p.caption(410, sw_top - 20, "MOD", 10)
+    p.vswitch("pwm_mod_on", 396, sw_top, cap=11, order=on)
+    p.caption(476, knob_y - 100, "SOURCE")
+    p.rotary("pwm_mod_source", 476, knob_y)
+    legend(p.p, "FOR THE PWM SWITCH'S LFO", 476, 572, 8, colour=dim, fit=226)
+    legend(p.p, "POSITION (VCO TAB)", 476, 590, 8, colour=dim, fit=226)
+    # VCF FM: ON / OFF, AMOUNT, the source
+    p.caption(650, sw_top - 20, "MOD", 10)
+    p.vswitch("fm_on", 636, sw_top, cap=11, order=on)
+    p.caption(856, 84, "AMOUNT")
+    p.knob("fm_amount", 856, 158, kstrip)
+    legend(p.p, "0", 856 - 62, 158 + 66, 9)
+    legend(p.p, "10", 856 + 62, 158 + 66, 9)
+    p.caption(768, knob_y - 100, "SOURCE")
+    p.rotary("fm_source", 768, knob_y)
+    legend(p.p, "AUDIO-RATE CUTOFF MODULATION", 768, 590, 8, colour=dim, fit=330)
     # LFO RANGE: SLOW / NORMAL / FAST, FAST at the top
-    p.caption(991, sw_top - 20, "RANGE", 10)
-    p.vswitch("lfo_range", 962, sw_top, cap=11, order=[2, 1, 0])
+    p.caption(1021, sw_top - 20, "RANGE", 10)
+    p.vswitch("lfo_range", 990, sw_top, cap=11, order=[2, 1, 0])
     for i, t in enumerate(["FAST: TO 550 HZ", "NORM: 12 S - 36 HZ", "SLOW: 50 S - 9 HZ"]):
-        legend(p.p, t, 991, 300 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
+        legend(p.p, t, 1021, 300 + i * 22, 8, colour=dim, fit=150)
     # LFO TRIG: ON / OFF
-    p.caption(1173, sw_top - 20, "KEY TRIG", 10)
+    p.caption(1183, sw_top - 20, "KEY TRIG", 10)
     p.vswitch("lfo_trig", 1150, sw_top, cap=11, order=on)
     for i, t in enumerate(["ON: THE LFO", "RESTARTS ON", "EACH KEY"]):
-        legend(p.p, t, 1173, 300 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
-    p.qrows = [["drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_source", "fm_amount"],
+        legend(p.p, t, 1183, 300 + i * 22, 8, colour=dim, fit=150)
+    p.qrows = [["mods", "drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_source", "fm_amount"],
                ["lfo_range", "lfo_trig"]]
     return p, p.art()
 
