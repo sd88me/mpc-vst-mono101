@@ -7,7 +7,7 @@ Layout: two tabs, the panel split in two so nothing has to shrink.
     VCF      SOURCE MIXER (+ SUB OSC), VCF, VCA (MODE, and QUALITY in its foot), ENV (+ TRIGGER).
 Sliders and knobs are Knob film strips (sliders dragged vertically); the switches are film strips of their positions
 with transparent radio buttons over them (tap a position or its legend).
-Q-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV.
+    MODS     the circuitbenders mods, each with its ON / OFF switch: FILTER OVERDRIVE, PWM SOURCE, VCF FM, LFO RANGE,\n             LFO TRIG (from the keys).\nQ-Links: VCO controller / bender+transpose / modulator / VCO; VCF mixer / VCF / KYBD+VCA / ENV; MODS one block per\nmod (LFO RANGE and TRIG together).
 
 Look: the SH-101's, from Lemus (tools/panel/panel.json's colours; the slider caps and knobs drawn as Lemus's HardwareView
 draws them): the grey panel with moulded grooves round the sections, black caps with a green / orange line, black knobs
@@ -68,6 +68,9 @@ CHOICES = {
     "lfo_wave": ["TRI", "SQR", "RND", "NOISE"], "range": ["16'", "8'", "4'", "2'"], "pwm_source": ["LFO", "MAN", "ENV"],
     "sub_mode": ["1 OCT", "2 OCT", "2 OCT PW"], "vca_mode": ["ENV", "GATE"], "env_trigger": ["GATE+TRIG", "GATE", "LFO"],
     "porta_mode": ["ON", "AUTO", "OFF"], "transpose": ["L", "M", "H"], "quality": ["HQ", "AUTO", "ECO"],
+    "drive_on": ["OFF", "ON"], "pwm_mod_on": ["OFF", "ON"], "pwm_mod_source": ["TRI", "SQR", "RND", "NOISE", "SUB 1", "SUB 2"],
+    "fm_on": ["OFF", "ON"], "fm_source": ["PULSE", "SAW", "SUB 1", "SUB 2", "SUB PW", "NOISE"], "lfo_range": ["SLOW", "NORM", "FAST"],
+    "lfo_trig": ["OFF", "ON"],
 }
 
 
@@ -432,7 +435,7 @@ def knob_strip(name):
 SW_W, SW_H, SW_PITCH = 34, 52, 42   # a slide switch's cap (px) and its positions' spacing (a fingertip each)
 SW_MM = 8.6                         # Lemus's switch cap width
 ROT_R = 40                          # a rotary switch's knob radius (px)
-ROT_DETENTS = {4: [-45, -15, 15, 45]}
+ROT_DETENTS = {4: [-45, -15, 15, 45], 6: [-120, -72, -24, 24, 72, 120]}
 HS_PITCH, HS_LEVER = 46, 28         # a lever switch's positions' spacing and its lever's diameter (px)
 
 
@@ -673,26 +676,27 @@ class Page:
     def strip(self, key, name, b, frames):
         self.kids.append(entry(key, strip_def(name, b[2], b[3], frames), {"version": 1, "handleName": "Data"}, B(*b), P(key), focus="Yes"))
 
-    def vswitch(self, key, cx, top, cap=9.5, limit=None):
+    def vswitch(self, key, cx, top, cap=9.5, limit=None, order=None):
         """A slide switch as on the panel: a black cap with a yellow line in a recessed slot, position 0 at the top; the
         legends to its right. Each row (cap and legend) is a tap target."""
         opts = CHOICES[key]
         n = len(opts)
+        order = order or list(range(n))   # which choice each position (top to bottom) is
         ys = [top + SW_H / 2 + i * SW_PITCH for i in range(n)]
         bot = ys[-1] + SW_H / 2
         well(self.p, [cx - SW_W / 2 - 4, top - 4, cx + SW_W / 2 + 4, bot + 4], darker(C["panel"], 0.06), r=1.5, depth=2.5, alpha=0.65, lip=0.32)
         well(self.p, [cx - 4, ys[0] - 6, cx + 4, ys[-1] + 6], C["slot_black"], r=2, depth=3.0, alpha=0.9, lip=0.18)
         right = cx + SW_W / 2 + 14 + max(text_width(o, cap) for o in opts) + 6
         right = min(right, limit) if limit else right
-        for o, y in zip(opts, ys):
+        for o, y in zip([opts[i] for i in order], ys):
             printed(self.p, lambda q, y=y: q.box([cx + SW_W / 2 + 6, y - 1.2, cx + SW_W / 2 + 10, y + 1.2], INK, r=1))
             legend(self.p, o, cx + SW_W / 2 + 14, y, cap, align="l")
         b = [int(cx - SW_W / 2 - 4), int(top - 4), SW_W + 14, int(bot - top) + 14]
         m = SW_W / SW_MM
-        name = film("%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[f] / m, SW_MM - 0.4, SW_H / m))
+        name = film("%s.png" % key, b[2], b[3], n, m, b[0], b[1], lambda p, f: switch_cap(p, cx / m, ys[order.index(f)] / m, SW_MM - 0.4, SW_H / m))
         self.strip(key, name, b, n)
         x0 = cx - SW_W / 2 - 6
-        self.zones(key, [(x0, y - SW_PITCH / 2, right - x0, SW_PITCH) for y in ys])
+        self.zones(key, [(x0, y - SW_PITCH / 2, right - x0, SW_PITCH) for y in ys], ids=order)
 
     def rotary(self, key, cx, cy, glyphs=False):
         """A rotary switch as on the panel (WAVE, RANGE): a small black knob with detent ticks and the legends round its
@@ -706,6 +710,10 @@ class Page:
             lx, ly = polar(cx, cy, r + 26, a)
             if glyphs:
                 printed(self.p, lambda q, o=o, lx=lx, ly=ly: wave_glyph(q, o, lx, ly, 20, 11))
+            elif abs(a) > 60:   # the low positions: legends beside the knob, reading away from it
+                legend(self.p, o, lx + (8 if a > 0 else -8), ly, 10, align="l" if a > 0 else "r")
+            elif n > 4:         # the top pair: reading away from each other
+                legend(self.p, o, lx + (-8 if a > 0 else 8), ly, 10, align="l" if a > 0 else "r")
             else:
                 legend(self.p, o, lx, ly, 11)
         m = r / KNOB_MM
@@ -715,6 +723,20 @@ class Page:
         name = film("%s.png" % key, bx[2], bx[3], n, m, bx[0], bx[1],
                     lambda p, f: draw_pointer(p, cx / m, cy / m, KNOB_MM, det[f]), base)
         self.strip(key, name, bx, n)
+        if n > 4:   # a tap target on each legend; the knob itself drags
+            boxes = []
+            for o, a in zip(opts, det):
+                lx, ly = polar(cx, cy, r + 26, a)
+                tw = text_width(o, 10)
+                if abs(a) > 60:
+                    x0 = lx + 2 if a > 0 else lx - tw - 14
+                    boxes.append((x0, ly - 15, tw + 12, 30))
+                else:
+                    x0 = lx - 10 if a > 0 else lx - tw - 10
+                    boxes.append((x0, ly - 15, tw + 20, 30))
+            self.zones(key, boxes)
+            self.extent[key] = (min(self.extent[key][0], bx[0]), self.extent[key][1], max(self.extent[key][2], bx[0] + bx[2]), max(self.extent[key][3], bx[1] + bx[3]))
+            return
         span, top = 128, cy - r - 44
         cw = span / n
         self.zones(key, [(cx - span / 2 + i * cw, top, cw, cy + r + 10 - top) for i in range(n)])
@@ -857,6 +879,57 @@ def page_two():
     return p, p.art()
 
 
+MODS = [("FILTER OVERDRIVE", 16, 256), ("PWM SOURCE", 256, 516), ("VCF FM", 516, 900), ("LFO RANGE", 900, 1082),
+        ("LFO TRIG", 1082, 1264)]
+
+
+def page_three():
+    """The circuitbenders SH-101 mods, each with its ON / OFF switch (off: the stock board)."""
+    p = Page("MODS", 2)
+    kstrip = knob_strip("knob.png")
+    sections(p.p, MODS, Y0, Y1, cap=15)
+    on = [1, 0]                              # ON at the top, as a toggle
+    sw_top, knob_y = 96, 380
+    # FILTER OVERDRIVE: ON / OFF, DRIVE
+    p.caption(76, sw_top - 20, "MOD", 10)
+    p.vswitch("drive_on", 62, sw_top, cap=11, order=on)
+    p.caption(136, knob_y - 76, "DRIVE")
+    p.knob("drive", 136, knob_y, kstrip)
+    legend(p.p, "0", 136 - 62, knob_y + 66, 9)
+    legend(p.p, "10", 136 + 62, knob_y + 66, 9)
+    legend(p.p, "MIXER INTO THE VCF, HARDER", 136, 590, 8, colour=darker(INK, 0.2), fit=220)
+    # PWM SOURCE: ON / OFF, the source
+    p.caption(316, sw_top - 20, "MOD", 10)
+    p.vswitch("pwm_mod_on", 302, sw_top, cap=11, order=on)
+    p.caption(386, knob_y - 100, "SOURCE")
+    p.rotary("pwm_mod_source", 386, knob_y)
+    legend(p.p, "FOR THE PWM SWITCH'S LFO", 386, 572, 8, colour=darker(INK, 0.2), fit=240)
+    legend(p.p, "POSITION (VCO TAB)", 386, 590, 8, colour=darker(INK, 0.2), fit=240)
+    # VCF FM: ON / OFF, the source, AMOUNT
+    p.caption(576, sw_top - 20, "MOD", 10)
+    p.vswitch("fm_on", 562, sw_top, cap=11, order=on)
+    p.caption(708, knob_y - 100, "SOURCE")
+    p.rotary("fm_source", 708, knob_y)
+    p.caption(800, 84, "AMOUNT")
+    p.knob("fm_amount", 800, 158, kstrip)
+    legend(p.p, "0", 800 - 62, 158 + 66, 9)
+    legend(p.p, "10", 800 + 62, 158 + 66, 9)
+    legend(p.p, "AUDIO-RATE CUTOFF MODULATION", 708, 590, 8, colour=darker(INK, 0.2), fit=360)
+    # LFO RANGE: SLOW / NORMAL / FAST, FAST at the top
+    p.caption(991, sw_top - 20, "RANGE", 10)
+    p.vswitch("lfo_range", 962, sw_top, cap=11, order=[2, 1, 0])
+    for i, t in enumerate(["FAST: TO 550 HZ", "NORM: 12 S - 36 HZ", "SLOW: 50 S - 9 HZ"]):
+        legend(p.p, t, 991, 300 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
+    # LFO TRIG: ON / OFF
+    p.caption(1173, sw_top - 20, "KEY TRIG", 10)
+    p.vswitch("lfo_trig", 1150, sw_top, cap=11, order=on)
+    for i, t in enumerate(["ON: THE LFO", "RESTARTS ON", "EACH KEY"]):
+        legend(p.p, t, 1173, 300 + i * 22, 8, colour=darker(INK, 0.2), fit=170)
+    p.qrows = [["drive_on", "drive"], ["pwm_mod_on", "pwm_mod_source"], ["fm_on", "fm_source", "fm_amount"],
+               ["lfo_range", "lfo_trig"]]
+    return p, p.art()
+
+
 # ---- preview (defaults, offline) ------------------------------------------------------------------------------------------
 def render_preview(p, art, defaults, zones=False):
     img = Image.open(os.path.join(OUT, art)).convert("RGBA")
@@ -892,7 +965,7 @@ def main():
         shutil.rmtree(OUT)
     os.makedirs(OUT)
     Image.new("RGBA", (4, 4), (0, 0, 0, 0)).save(os.path.join(OUT, "blank.png"))
-    pages = [page_one(), page_two()]
+    pages = [page_one(), page_two(), page_three()]
     tabs = [p.tab(art) for p, art in pages]
     maps = []
     for p, _ in pages:
