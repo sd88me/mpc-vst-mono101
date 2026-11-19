@@ -1,7 +1,7 @@
 {
   "name": "Mono-101",
   "manufacturer": "sd88me",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "format": "vst2",
   "kind": "instrument",
   "uid": "M101",
@@ -10,7 +10,7 @@
   "category": "Synth",
   "file32": "VST/mono101-arm32.so",
   "file64": "VST/mono101-arm64.so",
-  "description": "A circuit-modelled SH-101 voice (Lemus): the synth board solved part by part from the schematic, played from MIDI. No sequencer, no ROM.",
+  "description": "A circuit-modelled SH-101 (a port of the Lemus engine): the synth board solved part by part from the schematic, the manual's 40 sample sounds, user presets and a Circuit Bent page. No sequencer, no ROM.",
   "author": "sd88me",
   "url": "https://github.com/sd88me/mpc-vst-mono101",
   "license": "AGPL-3.0-only"
