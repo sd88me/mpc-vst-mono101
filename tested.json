@@ -1,5 +1,12 @@
 [
  {
+  "version": "0.5.1",
+  "device": "Akai MPC Live III (Gen2)",
+  "firmware": "MPC OS 3.10.1",
+  "date": "2026-11-21",
+  "note": "The release build (SDK zip from the v0.5.1 release) installed in place of 0.5.0; loads on a track and plays. Same plugin code as 0.5.0, rebuilt with current release tooling."
+ },
+ {
   "version": "0.5.0",
   "device": "Akai MPC Live III (Gen2)",
   "firmware": "MPC OS 3.10.1",
