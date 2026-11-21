@@ -390,7 +390,7 @@ private:
 		info.vendor = "sd88me";
 		static constexpr char uid[4] = {ONEX1_UID};
 		info.uniqueId = MPC_FOURCC(uid[0], uid[1], uid[2], uid[3]);
-		info.version = 500; // 0.5.0.0 (plugin.json's version)
+		info.version = 501; // 0.5.1.0 (plugin.json's version)
 		info.isInstrument = true;
 		info.numInputs = 0;
 		info.numOutputs = 2;
